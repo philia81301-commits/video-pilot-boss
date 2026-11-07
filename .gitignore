@@ -9,3 +9,6 @@ report/audio/
 
 # 人物貼圖不公開，製作時從本機資料夾複製
 report/assets/
+journey/assets/
+
+__pycache__/

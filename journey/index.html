@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<title>健康旅程攻略（動畫版）</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff9ea; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; color: #16324f;
+    font-family: "Noto Sans TC", "Microsoft JhengHei", "Segoe UI Emoji", sans-serif;
+    background: linear-gradient(180deg, #fffaf0 0%, #eefaff 62%, #d9f5ee 100%); }
+  #stripes { position: absolute; inset: -200px; opacity: .32;
+    background: repeating-linear-gradient(-58deg, transparent 0 60px, #ffe7ad 60px 72px, transparent 72px 100px, #bde9ff 100px 104px); }
+  #glow { position: absolute; width: 1300px; height: 1300px; border-radius: 50%; }
+  #ground { position: absolute; left: 0; right: 0; bottom: 0; height: 175px;
+    background: linear-gradient(180deg, #17bcaa, #0e9488); border-top: 5px solid #0b7f74; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .abs { position: absolute; }
+  canvas { position: absolute; inset: 0; pointer-events: none; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  #wipe { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; transform: translateX(-110%); }
+
+  #tabs { position: absolute; right: 50px; top: 34px; display: flex; gap: 12px; }
+  .tab { padding: 8px 22px; border-radius: 30px; font-size: 28px; font-weight: 700; background: rgba(22,50,79,.08); color: #4b6478; }
+  .tab.on { color: #16324f; font-weight: 900; }
+
+  .chip { position: absolute; left: 80px; top: 36px; padding: 8px 26px; border-radius: 30px; font-size: 32px; font-weight: 900; color: #16324f; white-space: nowrap; }
+  .title { position: absolute; left: 80px; top: 100px; font-size: 84px; font-weight: 900; letter-spacing: 3px; white-space: nowrap; text-shadow: 0 6px 0 rgba(255,207,77,.75); transform-origin: 0 60%; }
+  .items { position: absolute; left: 80px; top: 232px; width: 1230px; display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+  .li { display: flex; align-items: center; gap: 26px; width: 100%; padding: 16px 34px 16px 22px; border-radius: 26px; font-size: 48px; font-weight: 700; line-height: 1.28;
+    background: #fff; border: 2px solid #dbe7ee; box-shadow: 0 6px 0 rgba(22,50,79,.10); text-wrap: balance; }
+  .badge { flex: none; width: 88px; height: 88px; border-radius: 50%; background: #fff3d6; display: flex; align-items: center; justify-content: center; font-size: 54px; line-height: 1; box-shadow: 0 4px 0 rgba(22,50,79,.12); }
+  .hl { width: 100%; padding: 22px 40px; border-radius: 26px; font-size: 54px; font-weight: 900; line-height: 1.26; background: #fff; box-shadow: 0 9px 0 rgba(22,50,79,.18); text-wrap: balance; }
+  .p { padding: 2px 8px; font-size: 52px; font-weight: 700; line-height: 1.3; color: #24425e; text-wrap: balance; }
+  .bubble { position: absolute; left: 1330px; top: 250px; width: 150px; height: 150px; border-radius: 50%; background: #fffdf7; display: flex; align-items: center; justify-content: center; font-size: 86px; line-height: 1; box-shadow: 0 8px 0 rgba(22,50,79,.14); border: 7px solid; }
+
+  .doc { position: absolute; left: 0; top: 0; width: 470px; height: 470px; object-fit: contain; object-position: 50% 100%; transform-origin: 50% 100%; }
+
+  .center { position: absolute; left: 0; right: 0; text-align: center; white-space: nowrap; }
+  .ring { position: absolute; width: 170px; height: 170px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 92px; line-height: 1; box-shadow: 0 8px 0 rgba(22,50,79,.14); }
+
+  .node { position: absolute; width: 44px; height: 44px; margin: -22px; border-radius: 50%; border: 7px solid #fff; }
+  .nlab { position: absolute; width: 260px; margin-left: -130px; text-align: center; }
+  .nlab small { display: block; font-size: 32px; font-weight: 700; color: #4b6478; }
+  .nlab b { display: block; font-size: 52px; font-weight: 900; }
+
+  #hpBox { position: absolute; left: 80px; top: 722px; width: 1180px; }
+  .hpL { font-size: 38px; font-weight: 900; color: #b45309; letter-spacing: 3px; margin-bottom: 8px; }
+  .hpT { height: 42px; border-radius: 24px; background: rgba(22,50,79,.10); border: 5px solid #16324f; overflow: hidden; }
+  .hpF { height: 100%; background: linear-gradient(90deg, #ff5f9e, #ffcf4d); }
+
+  .step { position: absolute; top: 560px; width: 360px; height: 290px; border-radius: 30px; background: #fff; border: 3px solid #dbe7ee; box-shadow: 0 7px 0 rgba(22,50,79,.10); text-align: center; padding-top: 22px; }
+  .step .e { font-size: 110px; line-height: 1.15; }
+  .step .n { font-size: 50px; font-weight: 900; margin-top: 4px; }
+  .step .o { position: absolute; left: 18px; top: 16px; width: 66px; height: 66px; border-radius: 50%; background: #16324f; color: #fff; font-size: 42px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .arrow { position: absolute; top: 665px; font-size: 76px; font-weight: 900; color: #f59e0b; }
+
+  .sw { position: absolute; top: 560px; font-size: 170px; line-height: 1; }
+  #swX { position: absolute; left: 150px; top: 610px; width: 230px; height: 26px; border-radius: 14px; background: #ff5f9e; transform-origin: 50% 50%; }
+  .drop { position: absolute; font-size: 84px; line-height: 1; }
+
+  .bar { position: absolute; top: 470px; width: 410px; height: 130px; border-radius: 26px; background: rgba(22,50,79,.09); overflow: hidden; }
+  .barF { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 26px; background: linear-gradient(90deg, #7fe7a0, #5ee27f); }
+  .barL { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: 900; white-space: nowrap; }
+  #walkT { position: absolute; left: 80px; top: 640px; font-size: 118px; font-weight: 900; color: #5ee27f; text-shadow: 0 8px 0 rgba(0,0,0,.28); white-space: nowrap; transform-origin: 0 60%; }
+
+  .task { display: flex; align-items: center; gap: 30px; width: 100%; padding: 18px 28px; border-radius: 26px; background: #fff; border: 2px solid #dbe7ee; color: #21281f; font-size: 50px; font-weight: 800; box-shadow: 0 9px 0 rgba(0,0,0,.28); }
+  .box { position: relative; flex: none; width: 82px; height: 82px; border-radius: 18px; border: 7px solid #c9c4b4; }
+  .tick { position: absolute; left: 2px; top: -24px; font-size: 92px; font-weight: 900; color: #0a8a4d; line-height: 1; transform-origin: 50% 70%; }
+  #streak { position: absolute; left: 1090px; top: 240px; padding: 16px 40px; border-radius: 40px; font-size: 54px; font-weight: 900; background: #ffcf4d; color: #1b1642; white-space: nowrap; transform-origin: 50% 50%; }
+
+  #dayBox { position: absolute; left: 80px; top: 440px; padding: 22px 50px; border-radius: 30px; background: #fffdf7; color: #21281f; font-size: 76px; font-weight: 900; white-space: nowrap; box-shadow: 0 10px 0 rgba(0,0,0,.3); }
+  #dayBox b { color: #d97706; }
+  .star { position: absolute; top: 650px; font-size: 92px; line-height: 1; }
+
+  .flag { position: absolute; width: 620px; height: 124px; border-radius: 26px; border: 3px solid #fda4af; display: flex; align-items: center; gap: 20px; padding: 0 24px; background: #fff1f1; color: #8f1239; font-size: 44px; font-weight: 900; white-space: nowrap; box-shadow: 0 8px 0 rgba(120,10,50,.55); }
+  .flag i { font-style: normal; font-size: 58px; line-height: 1; }
+  #call { position: absolute; left: 80px; top: 720px; padding: 20px 46px; border-radius: 30px; background: #e11d48; font-size: 60px; font-weight: 900; white-space: nowrap; box-shadow: 0 10px 0 #881337; transform-origin: 0 50%; }
+
+  #sub { position: absolute; left: 0; right: 0; bottom: 62px; text-align: center; }
+  #sub span { display: inline-block; padding: 12px 40px; border-radius: 20px; background: rgba(13,44,66,.90); font-size: 50px; font-weight: 700; letter-spacing: 2px; white-space: nowrap; color: #fff; }
+  #foot { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 28px; color: #fff; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="stripes"></div><div id="glow"></div><div id="ground"></div>
+  <div id="scenes"></div>
+  <img class="doc" id="d_g" src="assets/g.png" alt="">
+  <img class="doc" id="d_gm" src="assets/gm.png" alt="">
+  <img class="doc" id="d_w" src="assets/w.png" alt="">
+  <img class="doc" id="d_b" src="assets/b.png" alt="">
+  <div id="tabs"></div>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+  <div id="wipe"></div>
+  <div id="flash"></div>
+  <div id="sub"><span id="subT"></span></div>
+  <div id="foot">高雄榮總 家庭醫學部 ・ 減重門診</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, d) => clamp((t - a) / d);
+const outCubic = x => 1 - (1 - x) ** 3;
+const inOut = x => x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2;
+const outBack = x => { const c = 1.9; return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
+const rnd = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+const T = window.TIMING, SC = window.SCENES, U = window.UNITS;
+const SEG = T.segments, TOTAL = T.total;
+const SG = (s, i) => SEG.find(x => x.s === s && x.i === i);
+const CONF = ['#ffcf4d', '#2fd2c2', '#5ee27f', '#ff7a9e', '#7fd6ff'];
+const TXT = { 0: '#b45309', 1: '#0b7f74', 2: '#c2410c', 3: '#0a8a4d', 4: '#b45309' };
+const UNITGLOW = { 0: 'rgba(255,207,77,.34)', 1: 'rgba(47,210,194,.26)', 2: 'rgba(255,143,107,.24)', 3: 'rgba(94,226,127,.26)', 4: 'rgba(255,207,77,.34)' };
+
+const el = (host, cls, html = '', css = '') => { const d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = html; if (css) d.style.cssText = css; host.appendChild(d); return d; };
+
+// 每個元素的進場動畫：pop 彈出、up 上滑、L 左滑、R 右滑、fade 淡入
+function anim(a, t) {
+  const { node, t0, kind, d = .42 } = a;
+  const on = t >= t0;
+  node.style.visibility = on ? '' : 'hidden';
+  if (!on) return;
+  const k = P(t, t0, d);
+  node.style.opacity = P(t, t0, .12);
+  if (kind === 'pop') node.style.transform = `scale(${outBack(k)})`;
+  else if (kind === 'up') node.style.transform = `translateY(${(1 - outBack(k)) * 90}px)`;
+  else if (kind === 'L') node.style.transform = `translateX(${(1 - outBack(k)) * -640}px)`;
+  else if (kind === 'R') node.style.transform = `translateX(${(1 - outBack(k)) * 640}px)`;
+}
+
+function burst(fx, t, t0, x, y, color, n = 30, spd = 620, life = 1) {
+  const a = t - t0; if (a < 0 || a > life) return;
+  const k = a / life;
+  for (let i = 0; i < n; i++) {
+    const ang = rnd(i + t0) * Math.PI * 2, v = spd * (.35 + rnd(i * 3.3 + t0) * .8);
+    fx.globalAlpha = 1 - k; fx.fillStyle = color[i % color.length];
+    fx.beginPath(); fx.arc(x + Math.cos(ang) * v * a, y + Math.sin(ang) * v * a + 640 * a * a, (5 + rnd(i * 7.1) * 11) * (1 - k * .5), 0, 7); fx.fill();
+  }
+  fx.globalAlpha = 1;
+}
+function ringFx(fx, t, t0, x, y, color, r1 = 360, life = .55) {
+  const a = (t - t0) / life; if (a < 0 || a > 1) return;
+  fx.globalAlpha = 1 - a; fx.strokeStyle = color; fx.lineWidth = 24 * (1 - a) + 2;
+  fx.beginPath(); fx.arc(x, y, r1 * outCubic(a), 0, 7); fx.stroke(); fx.globalAlpha = 1;
+}
+
+// ---------- 各幕的專屬內容 ----------
+const BUILD = {
+  intro(B, si, s, col, add) {
+    const h = B.host;
+    add(el(h, 'center', '健康旅程攻略', 'top:110px;font-size:156px;font-weight:900;letter-spacing:8px;text-shadow:0 9px 0 rgba(255,207,77,.8)'), SG(si, 0).start, 'pop');
+    add(el(h, 'center', '減重・營養・運動・好習慣', 'top:310px;font-size:68px;font-weight:900;color:#0b7f74'), SG(si, 1).start, 'up');
+    add(el(h, 'center', '整條路先畫給你看，關卡標清楚，一關一關破。', 'top:410px;font-size:50px;font-weight:700;color:#24425e'), SG(si, 2).start, 'up');
+    [['🚩', 1, 210], ['🥗', 2, 470], ['👟', 3, 1280], ['⭐', 4, 1540]].forEach(([e, u, x], i) => {
+      add(el(h, 'ring', e, `left:${x}px;top:610px;background:${U[u][1]}`), SG(si, 1).start + i * .3, 'pop');
+    });
+    B.bursts.push([SG(si, 0).start + .3, 960, 220, CONF, 54]);
+  },
+  chapter(B, si, s, col, add) {
+    const h = B.host, st = T.scenes[si].start;
+    add(el(h, 'center', `第 ${s.unit} 單元`, `top:70px;font-size:56px;font-weight:900;color:${TXT[s.unit]}`), st + .1, 'up');
+    add(el(h, 'center', s.name, 'top:130px;font-size:200px;font-weight:900;letter-spacing:12px;text-shadow:0 11px 0 rgba(255,207,77,.8)'), st + .3, 'pop');
+    add(el(h, 'center', s.tagline, `top:380px;font-size:72px;font-weight:900;color:${TXT[s.unit]}`), st + .9, 'up');
+    B.bursts.push([st + .45, 960, 260, CONF, 54]);
+  },
+  map(B, si, s, col, add) {
+    const h = B.host;
+    const N = [[130, 350], [500, 400], [950, 500], [1280, 500], [1650, 540]];
+    const names = ['起始期', '減重期', '停滯期', '維持期', '過渡期'];
+    let d = `M${N[0][0]} ${N[0][1]}`;
+    for (let i = 1; i < N.length; i++) { const mx = (N[i - 1][0] + N[i][0]) / 2; d += ` C${mx} ${N[i - 1][1]} ${mx} ${N[i][1]} ${N[i][0]} ${N[i][1]}`; }
+    const t1 = SG(si, 1).start, t1e = SG(si, 1).end + .2, t2 = SG(si, 2).start;
+    const boss = add(el(h, 'abs', '', 'left:770px;top:232px;width:360px;height:468px;border-radius:30px;background:rgba(255,207,77,.26);border:4px dashed #f59e0b'), t1 + (t1e - t1) * .42, 'pop');
+    add(el(h, 'abs', '停滯期＝魔王關', 'left:770px;top:250px;width:360px;text-align:center;font-size:44px;font-weight:900;color:#b45309;white-space:nowrap'), t1 + (t1e - t1) * .46, 'up');
+    h.insertAdjacentHTML('beforeend', `<svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="mapBase" d="${d}" fill="none" stroke="rgba(22,50,79,.13)" stroke-width="16" stroke-linecap="round"/><path id="mapLine" d="${d}" fill="none" stroke="#14b8a6" stroke-width="16" stroke-linecap="round"/></svg>`);
+    const base = h.querySelector('#mapBase'), line = h.querySelector('#mapLine');
+    const nodes = N.map(([x, y], i) => el(h, 'node', '', `left:${x}px;top:${y}px;background:${i === 2 ? '#ffcf4d' : '#2fd2c2'}`));
+    const labs = N.map(([x], i) => el(h, 'nlab', `<small>第 ${i + 1} 關</small><b style="color:${i === 2 ? '#b45309' : '#16324f'}">${names[i]}</b>`, `left:${x}px;top:572px`));
+    const walker = document.createElement('img'); walker.src = 'assets/g.png'; walker.className = 'abs'; walker.style.cssText = 'left:0;top:0;width:190px;height:190px;object-fit:contain;object-position:50% 100%'; h.appendChild(walker);
+    add(el(h, 'hl chk', s.lines[2].sub || s.lines[2].say, 'position:absolute;left:330px;top:716px;width:1260px;text-align:center;color:#b91c5c;padding:18px 30px'), t2, 'pop');
+    let len = null, nodeLen = null;
+    const hit = new Set();
+    B.draws.push((t, fx) => {
+      if (len === null) {
+        len = base.getTotalLength();
+        nodeLen = N.map(([x, y]) => { let best = 0, bd = 1e9; for (let l = 0; l <= len; l += 4) { const p = base.getPointAtLength(l), dd = (p.x - x) ** 2 + (p.y - y) ** 2; if (dd < bd) { bd = dd; best = l; } } return best; });
+        line.style.strokeDasharray = `${len} ${len}`;
+      }
+      const prog = inOut(P(t, t1, t1e - t1));
+      const L = prog * len;
+      line.style.strokeDashoffset = len - L;
+      const pt = base.getPointAtLength(L);
+      walker.style.transform = `translate(${pt.x - 95}px, ${pt.y - 196 + Math.sin(t * 9) * 5}px)`;
+      walker.style.opacity = P(t, T.scenes[si].start, .3);
+      N.forEach((n, i) => {
+        const tNode = L >= nodeLen[i] - 2;
+        nodes[i].style.opacity = tNode ? 1 : .35;
+        nodes[i].style.transform = tNode ? 'scale(1.05)' : 'scale(.75)';
+        labs[i].style.opacity = tNode ? 1 : .32;
+      });
+      const reach = i => { for (let q = t1; q <= t1e; q += .01) if (inOut(P(q, t1, t1e - t1)) * len >= nodeLen[i]) return q; return t1e; };
+      N.forEach(([x, y], i) => burst(fx, t, reach(i), x, y, i === 2 ? ['#ffcf4d', '#f59e0b'] : ['#2fd2c2', '#14b8a6'], 18, 380, .7));
+    });
+  },
+  check(B, si, s, col, add) {
+    s.lines.forEach((ln, i) => {
+      if (ln.kind !== 'task') return;
+      const x = SG(si, i);
+      const row = el(B.items, 'task chk', `<span class="box"><span class="tick">✓</span></span><span>${ln.text}</span>`);
+      add(row, x.start - .05, 'L');
+      add(row.querySelector('.tick'), x.end - .28, 'pop');
+      B.bursts.push([x.end - .15, 150, row, CONF, 22]);
+    });
+    const last = SG(si, s.lines.length - 1).end + .25;
+    add(el(B.host, '', '連勝中！', 'position:absolute;left:780px;top:112px;padding:14px 40px;border-radius:40px;font-size:58px;font-weight:900;background:#ffcf4d;color:#16324f;white-space:nowrap;box-shadow:0 7px 0 rgba(22,50,79,.16)'), last, 'pop');
+    B.bursts.push([last + .1, 950, 150, CONF, 40]);
+  },
+  flags(B, si, s, col, add) {
+    const h = B.host;
+    h.querySelector('.chip').style.cssText += ';background:#ff5f7e';
+    h.querySelector('.title').style.color = '#be123c';
+    const pos = [[80, 240], [720, 240], [80, 386], [720, 386], [80, 532]];
+    let k = 0;
+    s.lines.forEach((ln, i) => {
+      const x = SG(si, i);
+      if (ln.kind === 'flag') {
+        const [fx_, fy] = pos[k];
+        add(el(h, 'flag chk', `<i>⚠️</i><span>${ln.text}</span>`, `left:${fx_}px;top:${fy}px`), x.start, k % 2 ? 'R' : 'L');
+        k++;
+      } else if (ln.kind === 'call') {
+        add(el(h, 'chk', ln.text, 'position:absolute;left:80px;top:716px;padding:20px 44px;border-radius:30px;background:#e11d48;font-size:58px;font-weight:900;white-space:nowrap;box-shadow:0 10px 0 #881337;color:#fff'), x.start, 'pop');
+        const ph = add(el(h, 'ring', s.ic, 'left:1120px;top:680px;width:150px;height:150px;background:#fff;font-size:84px'), x.start + .25, 'pop');
+        B.draws.push((t, fx) => { for (let r = 0; r < 4; r++) ringFx(fx, t, x.start + .5 + r * .9, 1195, 755, '#ff7a9e', 150, .85); });
+        B.bursts.push([x.start + .2, 520, 770, ['#ff7a9e', '#f43f5e'], 26]);
+      }
+    });
+  },
+  outro(B, si, s, col, add) {
+    const h = B.host, a = SG(si, 0).start;
+    add(el(h, 'center', '一關一關破', 'top:70px;font-size:150px;font-weight:900;letter-spacing:8px;text-shadow:0 9px 0 rgba(255,207,77,.8)'), a, 'pop');
+    add(el(h, 'center', '我們陪你走', 'top:245px;font-size:112px;font-weight:900;color:#0b7f74'), a + .9, 'pop');
+    add(el(h, 'center', '有問題隨時打電話，不用等回診日', 'top:395px;font-size:50px;font-weight:700;color:#24425e'), SG(si, 1).start, 'up');
+    add(el(h, 'abs', '⭐', 'left:430px;top:600px;font-size:130px;line-height:1'), a + 1.4, 'pop');
+    add(el(h, 'abs', '💗', 'left:1360px;top:620px;font-size:112px;line-height:1'), a + 1.7, 'pop');
+    [0, 1.2, 2.6, 4.2].forEach((d, i) => B.bursts.push([a + d, 480 + (i % 2) * 960, 300, CONF, 54]));
+  },
+};
+
+const EXTRA = {
+  hp(B, si, s, col, add) {
+    const box = el(B.host, '', '<div class="hpL">魔王血量</div><div class="hpT"><div class="hpF"></div></div>');
+    box.id = 'hpBox'; box.classList.add('chk');
+    const x = SG(si, 3); add(box, SG(si, 2).start, 'up');
+    const fill = box.querySelector('.hpF');
+    B.draws.push((t, fx) => {
+      const steps = [0, .34, .67].map(k => x.start + k * (x.end - x.start));
+      let hp = 100;
+      steps.forEach((q, i) => { hp -= 22 * outCubic(P(t, q, .35)); burst(fx, t, q, 80 + 1180 * (100 - 22 * i) / 100, 800, ['#ffcf4d', '#ff5f9e', '#f59e0b'], 22, 420, .7); });
+      fill.style.width = hp + '%';
+    });
+  },
+  steps(B, si, s, col, add) {
+    const x = SG(si, 3), d = x.end - x.start;
+    [['🥚', '蛋白質'], ['🥦', '青菜'], ['🍚', '飯麵']].forEach(([e, n], i) => {
+      const left = 80 + i * 440;
+      add(el(B.host, 'step chk', `<div class="o">${i + 1}</div><div class="e">${e}</div><div class="n">${n}</div>`, `left:${left}px`), x.start + i * d / 3, 'pop');
+      if (i < 2) add(el(B.host, 'arrow chk', '➜', `left:${left + 368}px`), x.start + (i + .7) * d / 3, 'pop');
+      B.bursts.push([x.start + i * d / 3 + .1, left + 180, 690, CONF, 20]);
+    });
+  },
+  swap(B, si, s, col, add) {
+    const st = T.scenes[si].start, a = SG(si, 1).start;
+    add(el(B.host, 'sw chk', '🥤', 'left:170px'), st + .3, 'pop');
+    add(el(B.host, 'abs', '', 'left:140px;top:632px;width:240px;height:26px;border-radius:14px;background:#ff5f7e;rotate:-32deg;box-shadow:0 4px 0 rgba(22,50,79,.18)'), st + 1.1, 'pop');
+    add(el(B.host, 'arrow chk', '➜', 'left:440px;top:600px;font-size:100px'), a - .1, 'pop');
+    add(el(B.host, 'sw chk', '🍵', 'left:620px'), a + .1, 'pop');
+    add(el(B.host, 'sw chk', '💧', 'left:860px'), a + .45, 'pop');
+    B.bursts.push([a + .2, 700, 650, ['#5ee27f', '#22c55e'], 26]);
+  },
+  drops(B, si, s, col, add) {
+    const a = SG(si, 1), b = SG(si, 2);
+    for (let i = 0; i < 8; i++) add(el(B.host, 'drop chk', '💧', `left:${90 + i * 120}px;top:536px`), a.start + i * (a.end - a.start) / 8, 'pop');
+    for (let i = 0; i < 5; i++) add(el(B.host, 'drop chk', '🥦', `left:${90 + i * 200}px;top:680px;font-size:110px`), b.start + i * (b.end - b.start) / 5, 'pop');
+  },
+  walk(B, si, s, col, add) {
+    const h = B.host, x = SG(si, 1);
+    const T0 = x.start + .2, each = 1.25;
+    const bars = ['早上', '午餐後', '晚餐後'].map((l, i) => {
+      const left = 80 + i * 420;
+      const b = el(h, 'bar chk', `<div class="barF"></div><div class="barL">${l} 10 分鐘</div>`, `left:${left}px;width:400px;top:390px`);
+      add(b, x.start, 'up');
+      B.bursts.push([T0 + each * (i + 1), left + 380, 455, ['#5ee27f', '#22c55e'], 18]);
+      return b.querySelector('.barF');
+    });
+    const tt = T0 + each * 3;
+    add(el(h, 'chk', '＝ 30 分鐘', 'position:absolute;left:80px;top:560px;font-size:128px;font-weight:900;color:#0a8a4d;white-space:nowrap'), tt, 'pop');
+    B.bursts.push([tt + .15, 400, 640, CONF, 44]);
+    B.draws.push(t => bars.forEach((b, i) => { b.style.width = outCubic(P(t, T0 + each * i, each)) * 100 + '%'; }));
+  },
+  streak(B, si, s, col, add) {
+    const h = B.host, st = T.scenes[si].start + .7;
+    const box = el(h, 'chk', '', 'position:absolute;left:80px;top:360px;padding:22px 50px;border-radius:30px;background:#fff;border:3px solid #ffcf4d;color:#21281f;font-size:76px;font-weight:900;white-space:nowrap;box-shadow:0 10px 0 rgba(0,0,0,.3)');
+    add(box, st, 'pop');
+    const stars = [];
+    for (let i = 0; i < 9; i++) { const q = st + i * .55; stars.push(add(el(h, 'star chk', '⭐', `left:${80 + i * 132}px;top:560px;font-size:108px`), q, 'pop')); B.bursts.push([q + .05, 135 + i * 132, 610, ['#ffcf4d', '#f59e0b'], 14]); }
+    B.draws.push(t => { const n = clamp(1 + Math.floor((t - st) / .55), 1, 9); const txt = `戒糖飲挑戰　第 <b style="color:#d97706">${n}</b> 天`; if (box.dataset.n !== String(n)) { box.innerHTML = txt; box.dataset.n = n; } });
+    box.innerHTML = '戒糖飲挑戰　第 <b style="color:#d97706">9</b> 天';
+  },
+};
+
+// ---------- 建立各幕 ----------
+const built = SC.map((s, si) => {
+  const host = el($('scenes'), 'scene');
+  const B = { host, anims: [], draws: [], bursts: [], si, s };
+  const col = s.unit ? U[s.unit][1] : '#ffcf4d';
+  const add = (node, t0, kind = 'up', d) => (B.anims.push({ node, t0, kind, d }), node);
+  const st = T.scenes[si].start;
+  if (s.chip) add(el(host, 'chip', s.chip, `background:${col}`), st, 'L');
+  if (s.title) add(el(host, 'title chk', s.title), st + .08, 'pop');
+  if (s.ic && s.type !== 'flags') add(el(host, 'bubble', s.ic, `border-color:${col}`), st + .4, 'pop');
+  const items = el(host, 'items');
+  B.items = items;
+  s.lines.forEach((ln, i) => {
+    const t0 = SG(si, i).start;
+    if (ln.kind === 'li') { const n = add(el(items, 'li chk', `<span class="badge">${ln.ic}</span><span>${ln.text}</span>`), t0, 'L'); B.bursts.push([t0 + .12, 130, n, [col, '#ffcf4d'], 14]); }
+    else if (ln.kind === 'hl') { const n = add(el(items, 'hl chk', ln.text, `background:${col};color:#16324f`), t0, 'pop'); B.bursts.push([t0 + .22, 640, n, CONF, 36]); }
+    else if (ln.kind === 'p') add(el(items, 'p chk', ln.text), t0, 'up');
+  });
+  (BUILD[s.type] || (() => {}))(B, si, s, col, add);
+  if (s.extra) EXTRA[s.extra](B, si, s, col, add);
+  return B;
+});
+
+Object.entries(U).forEach(([k, [name, c]]) => { const d = el($('tabs'), 'tab', `${k}　${name}`); d.dataset.u = k; d.dataset.c = c; });
+
+const fx = $('fx').getContext('2d');
+const DOCS = ['g', 'gm', 'w', 'b'];
+const MOTION = { g: 'hop', gm: 'hop', w: 'point', b: 'tilt' };
+
+function render(t) {
+  fx.clearRect(0, 0, 1920, 1080);
+  $('stripes').style.transform = `translateX(${(t * 24) % 140}px)`;
+  let cur = 0;
+  built.forEach((b, i) => { if (t >= T.scenes[i].start - .4) cur = i; });
+  const C = SC[cur];
+  $('glow').style.transform = `translate(${500 + Math.sin(t * .35) * 500}px, ${-120 + Math.sin(t * .7) * 60}px)`;
+  const glow = C.type === 'flags' ? 'rgba(255,90,120,.22)' : UNITGLOW[C.unit];
+  $('glow').style.background = `radial-gradient(circle, ${glow}, transparent 62%)`;
+
+  built.forEach((b, i) => {
+    const start = i === 0 ? 0 : T.scenes[i].start - .4;
+    const stop = i === built.length - 1 ? TOTAL + 1 : T.scenes[i + 1].start - .4;
+    const on = t >= start && t < stop + .28;
+    b.host.style.display = on ? 'block' : 'none';
+    if (!on) return;
+    const inn = i === 0 ? 1 : outCubic(P(t, start, .34)), out = P(t, stop, .28);
+    b.host.style.opacity = inn * (1 - out);
+    b.host.style.transform = `translateX(${(1 - inn) * 180 - out * 260}px)`;
+    b.anims.forEach(a => anim(a, t));
+    b.draws.forEach(f => f(t, fx));
+    b.bursts.forEach(q => {
+      const [t0, x, y, c, n] = q;
+      if (t < t0 || t > t0 + 1) return;
+      let yy = y;
+      if (y instanceof HTMLElement) { let o = y, v = y.offsetHeight / 2; while (o && o !== $('stage') && o !== b.host) { v += o.offsetTop; o = o.offsetParent; } yy = v; }
+      burst(fx, t, t0, x, yy, c, n || 24, 560, .95);
+    });
+  });
+
+  // 上方單元進度
+  const showTabs = !['intro', 'outro', 'chapter'].includes(C.type);
+  $('tabs').style.opacity = showTabs ? 1 : 0;
+  [...$('tabs').children].forEach(d => { const on = +d.dataset.u === C.unit; d.classList.toggle('on', on); d.style.background = on ? d.dataset.c : ''; });
+
+  // 章節色塊
+  if (C.type === 'chapter') {
+    const st = T.scenes[cur].start, k = P(t, st - .45, .85);
+    $('wipe').style.background = `linear-gradient(90deg, ${U[C.unit][1]}, #fff)`;
+    $('wipe').style.transform = `translateX(${-110 + 220 * inOut(k)}%)`;
+  } else $('wipe').style.transform = 'translateX(-110%)';
+
+  // 人物貼圖
+  const big = ['intro', 'chapter', 'outro'].includes(C.type);
+  const st = T.scenes[cur].start;
+  DOCS.forEach(id => {
+    const d = $('d_' + id), on = C.pose === id && C.type !== 'map';
+    d.style.display = on ? '' : 'none';
+    if (!on) return;
+    const u = t - st + .4, sw = cur === 0 ? outBack(P(t, .2, .5)) : outBack(P(u, 0, .42));
+    const m = MOTION[id];
+    let dx = 0, dy = 0, rot = 0;
+    if (m === 'hop') dy = -24 * Math.abs(Math.sin(u * 2.8));
+    else if (m === 'point') { dx = -20 * Math.max(0, Math.sin(u * 2.6)) ** 4; dy = Math.sin(u * 1.3) * 6; rot = Math.sin(u * 1.2) * 1.5; }
+    else { rot = 3.2 * Math.sin(u * 1.9); dy = Math.sin(u * 2.2) * 6; }
+    const size = big ? 430 : 470, x = big ? 725 : 1440;
+    d.style.transform = `translate(${x + dx}px, ${410 + dy}px) scale(${sw * size / 470}) rotate(${rot}deg)`;
+  });
+
+  // 字幕
+  const idx = SEG.findIndex((s, i) => t >= s.start - .05 && t < (SEG[i + 1]?.start ?? TOTAL) - .02);
+  const seg = idx >= 0 ? SEG[idx] : null;
+  const sub = seg && t < seg.end + .35 ? seg.sub : '';
+  const subEl = $('subT'); if (subEl.textContent !== sub) subEl.textContent = sub;
+  subEl.style.display = sub ? '' : 'none';
+}
+window.render = render;
+
+window.layoutCheck = () => {
+  const out = [];
+  built.forEach((b, i) => {
+    b.host.style.cssText = 'display:block;opacity:1;transform:none';
+    b.anims.forEach(a => { a.node.style.visibility = ''; a.node.style.transform = 'none'; a.node.style.opacity = 1; });
+    const limitX = b.s.type === 'map' ? 1880 : (['intro', 'chapter', 'outro'].includes(b.s.type) ? 1880 : 1330);
+    let maxB = 0;
+    b.host.querySelectorAll('.chk').forEach(n => {
+      const r = n.getBoundingClientRect();
+      const txt = (n.innerText || '').slice(0, 24);
+      maxB = Math.max(maxB, r.bottom);
+      if (r.right > limitX || r.bottom > 888) out.push({ scene: i, text: txt, right: Math.round(r.right), bottom: Math.round(r.bottom) });
+      if (n.classList.contains('li') || n.classList.contains('hl') || n.classList.contains('p')) {
+        const lh = parseFloat(getComputedStyle(n).lineHeight);
+      }
+    });
+    out.push({ scene: i, type: b.s.type, contentBottom: Math.round(maxB) });
+    b.host.style.display = 'none';
+  });
+  const subs = SEG.map(s => { $('subT').textContent = s.sub; $('subT').style.display = ''; return { sub: s.sub, w: $('subT').getBoundingClientRect().width }; }).filter(x => x.w > 1840);
+  return { over: out.filter(x => x.text !== undefined), subsTooWide: subs, bottoms: out.filter(x => x.type).map(x => `${x.scene}:${x.contentBottom}`).join(' ') };
+};
+render(0);
+</script>
+</body>
+</html>
