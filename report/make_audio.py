@@ -1,15 +1,21 @@
-"""門診成績單：逐句產生 HsiaoChen 旁白與音效，輸出 audio/mix.wav 與 timing.json。"""
+"""門診成績單：逐句產生 HsiaoChen 旁白與音效，輸出 audio/mix.wav 與 timing.json。
+
+python make_audio.py [YYYY_MM]（省略則用 data 裡最新的月份）
+"""
 import asyncio
 import json
 import math
 import random
 import struct
 import subprocess
+import sys
 import wave
 from pathlib import Path
 
 import edge_tts
 import imageio_ffmpeg
+
+from content import blocking_issues, lines, load
 
 ROOT = Path(__file__).parent
 AUDIO = ROOT / "audio"
@@ -21,36 +27,6 @@ GAP = 0.3
 SCENE_GAP = 0.55
 LEAD_IN = 0.7
 TAIL = 2.5
-
-# k：動畫錨點；say：唸的文字；sub：字幕（省略則用 say）；new：是否新場景
-LINES = [
-    dict(k="intro1", say="大家好，這裡是高雄榮總家醫部減重門診。"),
-    dict(k="intro2", say="帶你看看，門診夥伴的真實數據。"),
-    dict(k="ppl1", new=1, say="目前累積追蹤八百八十三位個案，", sub="目前累積追蹤 883 位個案"),
-    dict(k="ppl2", say="平均四十二點七歲，起始體重平均九十點九公斤。", sub="平均 42.7 歲，起始體重平均 90.9 公斤"),
-    dict(k="ppl3", say="來診前半年，百分之七十一的人，體重正在上升。", sub="來診前半年，71% 的人體重正在上升"),
-    dict(k="ppl4", say="你不孤單，來看診的人，大多和你一樣正在努力。"),
-    dict(k="dis1", new=1, say="常合併的健康問題，第一名是糖尿病或糖尿病前期，超過三成五。",
-         sub="常合併的健康問題，第一名是糖尿病或前期，超過三成五"),
-    dict(k="dis2", say="脂肪肝、高血脂、高血壓，也都在三成上下。"),
-    dict(k="dis3", say="大約每四個人，就有三個人合併至少一種健康問題。"),
-    dict(k="dis4", say="好消息是，體重下降，這些問題也常跟著改善。"),
-    dict(k="tx1", new=1, say="治療方式呢？腸泌素藥物佔百分之四十三，生活型態調整不用藥，佔百分之三十四。",
-         sub="腸泌素藥物 43%，生活型態調整（不用藥）34%"),
-    dict(k="tx2", say="用不用藥、用哪一種，都由醫師依你的身體狀況一起討論。"),
-    dict(k="eff1", new=1, say="追蹤三到五個月，平均體重下降百分之五點六。", sub="追蹤 3 到 5 個月，平均體重下降 5.6%"),
-    dict(k="eff2", say="以八十公斤為例，大約減四點五公斤。", sub="以 80 公斤為例，大約減 4.5 公斤"),
-    dict(k="eff3", say="有一半的人，減掉百分之五以上的體重，這是醫學上有意義的改善。",
-         sub="一半的人（51%）減掉 5% 以上體重，這是醫學上有意義的改善"),
-    dict(k="tr1", new=1, say="追蹤半年以上的人，平均減重大約百分之八到十。", sub="追蹤半年以上的人，平均減重大約 8% 到 10%"),
-    dict(k="tr2", say="穩穩減、持續回診，比一次減很多更重要。"),
-    dict(k="bud1", new=1, say="初診問卷裡，將近一半的人，可以接受每月八千到一萬五千元。",
-         sub="將近一半的人，可接受每月 8,000 到 15,000 元"),
-    dict(k="bud2", say="看診時可以依你的預算，和醫師一起規劃方案。"),
-    dict(k="end1", new=1, say="減重，我們陪你一起走。"),
-    dict(k="end2", say="個人成效因人而異，實際治療以醫師評估為準。"),
-]
-
 
 async def tts(text, path):
     await edge_tts.Communicate(text, VOICE).save(str(path))
@@ -120,8 +96,12 @@ def rise(d=0.7):
 
 
 async def main():
+    D = load(sys.argv[1] if len(sys.argv) > 1 else None)
+    bad = blocking_issues(D)
+    if bad:
+        raise SystemExit("還有問題沒處理，請先看 monthly.py check：\n" + "\n".join(f"- {k or '資料'}：{m}" for k, m in bad))
     voices, segs, t = [], [], LEAD_IN
-    for i, ln in enumerate(LINES):
+    for i, ln in enumerate(lines(D)):
         if ln.get("new"):
             t += SCENE_GAP
         p = AUDIO / f"line{i:02d}.mp3"
@@ -166,7 +146,7 @@ async def main():
         w.setframerate(SR)
         w.writeframes(b"".join(struct.pack("<h", int(v * scale)) for v in buf))
     (ROOT / "timing.json").write_text(
-        json.dumps(dict(total=round(total, 3), segments=segs), ensure_ascii=False, indent=1), encoding="utf-8")
+        json.dumps(dict(month=D["month"], total=round(total, 3), segments=segs), ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"total {total:.2f}s")
     for x in segs:
         print(x["start"], x["end"], x["k"])

@@ -106,7 +106,7 @@
     <div class="scene" id="S0">
       <div id="t1">減重門診</div>
       <div id="t2"></div>
-      <div id="chip">民國 115 年 10 月 門診數據</div>
+      <div id="chip"></div>
     </div>
 
     <div class="scene" id="S1">
@@ -115,7 +115,7 @@
       <div class="kpi" id="k1" style="left:740px;top:160px"><div class="l">平均年齡</div><div class="v"><span id="v1"></span><small>歲</small></div></div>
       <div class="kpi" id="k2" style="left:70px;top:356px"><div class="l">平均起始體重</div><div class="v"><span id="v2"></span><small>公斤</small></div></div>
       <div class="kpi" id="k3" style="left:740px;top:356px"><div class="l">平均起始 BMI</div><div class="v"><span id="v3"></span></div></div>
-      <div id="split"><div id="sF">女性 59%</div><div id="sM">男性 41%</div></div>
+      <div id="split"><div id="sF"></div><div id="sM"></div></div>
       <div id="banner">
         <div class="n"><span id="v71"></span>%</div>
         <div class="x">來診前半年<br>體重正在上升</div>
@@ -131,7 +131,7 @@
         <svg viewBox="0 0 110 176"><g id="p1" class="person"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
         <svg viewBox="0 0 110 176"><g id="p2" class="person"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
         <svg viewBox="0 0 110 176"><g id="p3" class="person" fill="#cfcbbd"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
-        <div id="fourT">每 4 人約有 <b>3 人</b><br>合併至少一種健康問題</div>
+        <div id="fourT"></div>
       </div>
     </div>
 
@@ -145,14 +145,14 @@
     <div class="scene" id="S4">
       <div class="h" style="font-size:72px">追蹤 3–5 個月，<b>可以減多少</b>？</div>
       <div id="big"><span id="bigN"></span>%</div>
-      <div id="bigL">平均體重下降（n=147）</div>
+      <div id="bigL"></div>
       <div id="sc">
         <div class="tt">以 80 公斤為例</div>
         <div id="scTrack"><div id="scFill"></div></div>
-        <div id="scV"><span id="scN"></span> 公斤　<b>減約 4.5 公斤</b></div>
+        <div id="scV"><span id="scN"></span> 公斤　<b id="scKg"></b></div>
       </div>
       <div id="wf"></div>
-      <div id="wfT"><b>51%</b> 減掉 5% 以上<br>醫學上有意義的改善</div>
+      <div id="wfT"></div>
     </div>
 
     <div class="scene" id="S5">
@@ -164,7 +164,7 @@
 
     <div class="scene" id="S6">
       <div class="h" style="font-size:72px">大家可接受的<b>每月預算</b></div>
-      <div id="tNote2" class="abs" style="left:80px;top:142px;font-size:38px;font-weight:700;color:#d9d2ff">初診問卷（n=445），不是實際花費</div>
+      <div id="tNote2" class="abs" style="left:80px;top:142px;font-size:38px;font-weight:700;color:#d9d2ff"></div>
       <div id="bars6"></div>
     </div>
 
@@ -174,7 +174,7 @@
       <div class="chk" id="c1" style="top:380px"><i>✓</i>再討論：適合你的治療方式與預算</div>
       <div class="chk" id="c2" style="top:490px"><i>✓</i>持續回診：一起看成效、一起調整</div>
       <div id="clinic">高雄榮總 家醫部 減重門診</div>
-      <div id="src">資料來源：本門診 883 位追蹤個案與 445 份初診問卷（民國 114 年 9 月至 115 年 10 月）。以上為整體平均，個人成效因人而異；實際治療以醫師評估為準。</div>
+      <div id="src"></div>
     </div>
 
     <img class="doc" id="d0" src="assets/whoop.png" alt="">
@@ -195,6 +195,7 @@ const inOut = x => x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2;
 const outBack = x => { const c = 1.9; return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
 const rnd = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
+const D = window.DATA;
 const SEG = window.TIMING?.segments || [];
 const TOTAL = window.TIMING?.total || 75;
 const A = k => SEG.find(s => s.k === k)?.start ?? 0;
@@ -204,17 +205,25 @@ const slideIn = (el, t, t0, dx = -500, d = .38) => { const a = outBack(P(t, t0, 
 const num = (t, t0, d, v, dec = 0) => (v * outCubic(P(t, t0, d))).toFixed(dec);
 
 // 靜態組件
+$('chip').textContent = `${D.roc_month} 門診數據`;
+$('sF').textContent = `女性 ${D.female_pct}%`; $('sM').textContent = `男性 ${D.male_pct}%`;
+$('fourT').innerHTML = `每 4 人約有 <b>${D.any_k} 人</b><br>合併至少一種健康問題`;
+$('bigL').textContent = `平均體重下降（n=${D.m3.n}）`;
+$('scKg').textContent = `減約 ${D.kg80} 公斤`;
+$('wfT').innerHTML = `<b>${D.m3.success_pct}%</b> 減掉 5% 以上<br>醫學上有意義的改善`;
+$('tNote2').textContent = `初診問卷（n=${D.survey_n}），不是實際花費`;
+$('src').textContent = `資料來源：本門診 ${D.n} 位追蹤個案與 ${D.survey_n} 份初診問卷（${D.period}）。以上為整體平均，個人成效因人而異；實際治療以醫師評估為準。`;
 const t2 = '大家的成績單'; $('t2').innerHTML = [...t2].map(c => `<span>${c}</span>`).join('');
 const makeBars = (host, rows, top, gap) => { rows.forEach((r, i) => {
   const d = document.createElement('div'); d.className = 'row'; d.id = host + i; d.style.top = top + i * gap + 'px';
   d.innerHTML = `<div class="lab">${r.l}</div><div class="tr"><div class="fi" style="background:${r.c}"></div></div><div class="pc"></div>`;
   $(host).appendChild(d); }); };
-// 數值對照 2026_10 月報：疾病 n/445；預算 n/445（考慮手術 n=8 依 n<10 守則不呈現）
-const R2 = [{ l: '糖尿病／前期', v: 35.5, c: '#ff7a59' }, { l: '脂肪肝', v: 34.4, c: '#f6b73c' }, { l: '高血脂', v: 30.6, c: '#b47ae8' }, { l: '高血壓', v: 29.4, c: '#5aa2ff' }, { l: '睡眠呼吸中止', v: 11.46, c: '#2fd2c2' }];
+// 數值來自 data/YYYY_MM.json；考慮手術不呈現（2026_10 時 n=8）
+const R2 = D.diseases.map((r, i) => ({ ...r, c: ['#ff7a59', '#f6b73c', '#b47ae8', '#5aa2ff', '#2fd2c2'][i] }));
 makeBars('bars2', R2, 150, 92);
-const R6 = [{ l: '1,000 元以下', v: 9.7, c: '#2fd2c2' }, { l: '1,000–4,500 元', v: 20.0, c: '#5aa2ff' }, { l: '4,500–8,000 元', v: 20.0, c: '#b47ae8' }, { l: '8,000–15,000 元', v: 48.5, c: '#ffcf4d' }];
+const R6 = D.budget.map((r, i) => ({ ...r, c: ['#2fd2c2', '#5aa2ff', '#b47ae8', '#ffcf4d'][i] }));
 makeBars('bars6', R6, 240, 136);
-const TX = [{ l: '腸泌素藥物', p: '43%', n: 380, c: '#2fd2c2' }, { l: '生活型態調整<small>（不用藥）</small>', p: '34%', n: 297, c: '#5ee27f' }, { l: '其他口服藥物', p: '15%', n: 130, c: '#f6b73c' }, { l: '藥物併用／轉換', p: '6.6%', n: 58, c: '#b47ae8' }, { l: '減重手術評估', p: '1.6%', n: 14, c: '#ff7a9e' }];
+const TX = D.treatments;
 const R = 250, CIRC = 2 * Math.PI * R;
 TX.forEach((x, i) => {
   const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -225,7 +234,7 @@ TX.forEach((x, i) => {
   $('lgs').appendChild(d);
 });
 for (let i = 0; i < 100; i++) { const c = document.createElement('div'); c.className = 'cell'; c.id = 'cell' + i; c.style.left = (i % 10) * 54 + 'px'; c.style.top = Math.floor(i / 10) * 54 + 'px'; $('wf').appendChild(c); }
-const TR = [{ l: '3–5 個月', s: 'n=147', v: 5.6, c: '#5aa2ff' }, { l: '6–8 個月', s: 'n=44', v: 8.1, c: '#2fd2c2' }, { l: '9–11 個月', s: 'n=35', v: 10.2, c: '#5ee27f' }, { l: '12 個月以上', s: 'n=78', v: 8.0, c: '#f6b73c' }];
+const TR = D.timeline.map((r, i) => ({ ...r, c: ['#5aa2ff', '#2fd2c2', '#5ee27f', '#f6b73c'][i] }));
 TR.forEach((x, i) => {
   const cx = 280 + i * 300;
   $('vbs').insertAdjacentHTML('beforeend', `<div class="vb" id="vb${i}" style="left:${cx - 95}px;background:linear-gradient(180deg,${x.c},${x.c}aa)"></div><div class="vv" id="vv${i}" style="left:${cx - 135}px"></div><div class="vl" style="left:${cx - 135}px">${x.l}<br><span style="font-size:32px;font-weight:500;color:#d9d2ff">${x.s}</span></div>`);
@@ -280,14 +289,14 @@ function render(t) {
 
   // S1
   const p1 = A('ppl1'), p2 = A('ppl2'), p3 = A('ppl3');
-  slideIn($('k0'), t, p1, -700); $('v0').textContent = num(t, p1 + .1, 1, 883);
-  slideIn($('k1'), t, p2 - .05, 700); $('v1').textContent = num(t, p2 + .05, .8, 42.7, 1);
-  slideIn($('k2'), t, p2 + 1.4, -700); $('v2').textContent = num(t, p2 + 1.5, .8, 90.9, 1);
-  slideIn($('k3'), t, p2 + 1.9, 700); $('v3').textContent = num(t, p2 + 2, .8, 32.8, 1);
+  slideIn($('k0'), t, p1, -700); $('v0').textContent = num(t, p1 + .1, 1, D.n);
+  slideIn($('k1'), t, p2 - .05, 700); $('v1').textContent = num(t, p2 + .05, .8, D.age, 1);
+  slideIn($('k2'), t, p2 + 1.4, -700); $('v2').textContent = num(t, p2 + 1.5, .8, D.bw, 1);
+  slideIn($('k3'), t, p2 + 1.9, 700); $('v3').textContent = num(t, p2 + 2, .8, D.bmi, 1);
   const spl = P(t, p3 - .75, .55); $('split').style.opacity = spl > 0 ? 1 : 0; $('split').style.clipPath = `inset(0 ${(1 - inOut(spl)) * 100}% 0 0 round 38px)`;
-  $('sF').style.width = '59%';
+  $('sF').style.width = D.female_pct + '%';
   const bn = outBack(P(t, p3 + .05, .4)); $('banner').style.opacity = P(t, p3 + .05, .1); $('banner').style.transform = `translateY(${(1 - bn) * 240}px)`;
-  $('v71').textContent = num(t, p3 + .2, 1, 71);
+  $('v71').textContent = num(t, p3 + .2, 1, D.weight_up_pct);
   $('arrow').style.strokeDashoffset = 500 * (1 - outCubic(P(t, p3 + .5, .8)));
   burst(t, p3 + 1.2, 500, 760, ['#ffcf4d', '#fff', '#ff7a9e'], 36, 620, .9);
 
@@ -302,32 +311,32 @@ function render(t) {
     pc.style.color = i === 0 ? '#ffcf4d' : '#fff';
   });
   const fo = outBack(P(t, d3 - .1, .4)); $('four').style.opacity = P(t, d3 - .1, .1); $('four').style.transform = `translateY(${(1 - fo) * 280}px)`;
-  [0, 1, 2, 3].forEach(i => { const lit = i < 3 ? outBack(P(t, d3 + 1.1 + i * .28, .3)) : 1, g = $('p' + i);
-    g.style.fill = i < 3 && t >= d3 + 1.1 + i * .28 ? '#d93a76' : '#cfcbbd'; g.style.transformOrigin = '55px 100px'; g.style.transform = `scale(${i < 3 ? .86 + .14 * lit : .86})`; });
+  [0, 1, 2, 3].forEach(i => { const lit = i < D.any_k ? outBack(P(t, d3 + 1.1 + i * .28, .3)) : 1, g = $('p' + i);
+    g.style.fill = i < D.any_k && t >= d3 + 1.1 + i * .28 ? '#d93a76' : '#cfcbbd'; g.style.transformOrigin = '55px 100px'; g.style.transform = `scale(${i < D.any_k ? .86 + .14 * lit : .86})`; });
 
   // S3
   const tx = A('tx1');
   const grow = inOut(P(t, tx + .05, 1.3)); let acc = 0;
   TX.forEach((x, i) => {
-    const frac = x.n / 883, arc = $('arc' + i), L = CIRC * frac * grow;
+    const frac = x.n / D.n, arc = $('arc' + i), L = CIRC * frac * grow;
     arc.setAttribute('stroke-dasharray', `${Math.max(0, L - 4)} ${CIRC}`);
     arc.setAttribute('stroke-dashoffset', -acc * grow * CIRC);
     acc += frac;
     const lt = tx + .12 + i * .23, l = $('lg' + i); slideIn(l, t, lt, 500);
   });
-  $('dcN').textContent = num(t, tx + .1, 1.2, 883);
+  $('dcN').textContent = num(t, tx + .1, 1.2, D.n);
 
   // S4
   const e1 = A('eff1'), e2 = A('eff2'), e3 = A('eff3');
-  $('bigN').textContent = num(t, e1 + .55, 1.3, 5.6, 1);
+  $('bigN').textContent = num(t, e1 + .55, 1.3, D.m3.pct, 1);
   const bg = outBack(P(t, e1 + .4, .4)); $('big').style.opacity = P(t, e1 + .4, .1); $('big').style.transform = `scale(${.5 + .5 * bg})`; $('big').style.transformOrigin = '0 60%';
   slideIn($('bigL'), t, e1 + 1.5, -600);
   burst(t, e1 + 1.9, 440, 280, ['#5ee2a0', '#fff', '#ffcf4d'], 46, 720, 1);
   ring(t, e1 + 1.9, 440, 280, '#5ee2a0', 480, .6);
   const so = outBack(P(t, e2 - .2, .35)); $('sc').style.opacity = P(t, e2 - .2, .1); $('sc').style.transform = `translateY(${(1 - so) * 340}px)`;
-  const sa = inOut(P(t, e2 + .25, 1.3)); $('scFill').style.width = (100 - 5.6 * sa * 1) + '%';
-  $('scN').textContent = (80 - 4.5 * sa).toFixed(1);
-  for (let i = 0; i < 100; i++) { const c = $('cell' + i); const on = i < 51 && t >= e3 + .15 + i * .03; c.style.background = on ? '#5ee2a0' : 'rgba(255,255,255,.15)'; c.style.transform = on ? `scale(${.7 + .3 * outBack(P(t, e3 + .15 + i * .03, .2))})` : 'scale(1)'; }
+  const sa = inOut(P(t, e2 + .25, 1.3)); $('scFill').style.width = (100 - D.m3.pct * sa * 1) + '%';
+  $('scN').textContent = (80 - D.kg80 * sa).toFixed(1);
+  for (let i = 0; i < 100; i++) { const c = $('cell' + i); const on = i < D.m3.success_pct && t >= e3 + .15 + i * .03; c.style.background = on ? '#5ee2a0' : 'rgba(255,255,255,.15)'; c.style.transform = on ? `scale(${.7 + .3 * outBack(P(t, e3 + .15 + i * .03, .2))})` : 'scale(1)'; }
   const wo = P(t, e3 - .3, .25); $('wf').style.opacity = wo; $('wfT').style.opacity = P(t, e3 + 1.6, .25);
 
   // S5：柱高 = 值 × 50，底部對齊軸線
