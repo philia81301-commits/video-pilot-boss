@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<title>門診成績單動畫</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #14112b; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; color: #fff;
+    font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    background: linear-gradient(180deg, #1b1642 0%, #2c2166 62%, #47308a 100%); }
+  #stripes { position: absolute; inset: -200px; opacity: .09;
+    background: repeating-linear-gradient(-58deg, transparent 0 60px, #f6b73c 60px 72px, transparent 72px 100px, #7fd6ff 100px 104px); }
+  #glow { position: absolute; width: 1200px; height: 1200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(90,200,255,.28), transparent 62%); }
+  #ground { position: absolute; left: 0; right: 0; bottom: 0; height: 176px;
+    background: linear-gradient(180deg, #5a3ca8, #38277a); border-top: 6px solid #8d6fe0; }
+  #shake { position: absolute; inset: 0; }
+  .scene { position: absolute; inset: 0; }
+  .abs { position: absolute; }
+  canvas { position: absolute; inset: 0; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+  .h { position: absolute; left: 70px; top: 44px; font-size: 80px; font-weight: 900; letter-spacing: 4px; white-space: nowrap; text-shadow: 0 7px 0 rgba(0,0,0,.28); }
+  .h b { color: #ffcf4d; }
+  .doc { position: absolute; left: 0; top: 0; width: 470px; height: 470px; transform-origin: 50% 100%; }
+
+  /* intro */
+  #t1 { position: absolute; left: 110px; top: 200px; font-size: 128px; font-weight: 900; letter-spacing: 8px; white-space: nowrap; text-shadow: 0 9px 0 rgba(0,0,0,.28); }
+  #t2 { position: absolute; left: 110px; top: 360px; font-size: 172px; font-weight: 900; letter-spacing: 6px; color: #ffcf4d; white-space: nowrap; text-shadow: 0 11px 0 #8a5a00, 0 0 60px rgba(255,207,77,.45); }
+  #t2 span { display: inline-block; }
+  #chip { position: absolute; left: 116px; top: 610px; padding: 16px 44px; border-radius: 60px; background: #fff; color: #3a2a86; font-size: 50px; font-weight: 900; }
+
+  /* people */
+  .kpi { position: absolute; width: 650px; height: 176px; border-radius: 30px; background: rgba(255,253,247,.97); color: #21281f; padding: 18px 38px; box-shadow: 0 12px 0 rgba(0,0,0,.28); }
+  .kpi .l { font-size: 38px; font-weight: 700; color: #57607a; }
+  .kpi .v { font-size: 92px; font-weight: 900; line-height: 1.12; }
+  .kpi .v small { font-size: 44px; font-weight: 700; margin-left: 10px; }
+  #split { position: absolute; left: 70px; top: 556px; width: 1320px; height: 74px; border-radius: 38px; overflow: hidden; display: flex; font-size: 42px; font-weight: 900; box-shadow: 0 8px 0 rgba(0,0,0,.25); }
+  #split div { display: flex; align-items: center; padding: 0 30px; white-space: nowrap; }
+  #sF { background: #ef6c9e; } #sM { background: #2f8fd8; flex: 1; justify-content: flex-end; }
+  #banner { position: absolute; left: 70px; top: 664px; width: 1320px; height: 200px; border-radius: 30px; background: linear-gradient(90deg, #d93a76, #f2703d); display: flex; align-items: center; gap: 34px; padding: 0 46px; box-shadow: 0 12px 0 #8c2149; }
+  #banner .n { font-size: 138px; font-weight: 900; line-height: 1; }
+  #banner .x { font-size: 58px; font-weight: 900; line-height: 1.25; }
+  #banner svg { width: 190px; height: 150px; margin-left: auto; flex: none; }
+
+  /* bars */
+  .row { position: absolute; left: 70px; width: 1310px; height: 78px; }
+  .row .lab { position: absolute; left: 0; top: 0; width: 400px; height: 78px; display: flex; align-items: center; justify-content: flex-end; font-size: 46px; font-weight: 700; white-space: nowrap; }
+  .row .tr { position: absolute; left: 424px; top: 9px; width: 760px; height: 60px; border-radius: 30px; background: rgba(255,255,255,.13); }
+  .row .fi { position: absolute; left: 0; top: 0; height: 60px; border-radius: 30px; }
+  .row .pc { position: absolute; top: 2px; font-size: 62px; font-weight: 900; white-space: nowrap; }
+  #four { position: absolute; left: 70px; top: 640px; width: 1310px; height: 222px; border-radius: 30px; background: rgba(255,253,247,.97); color: #21281f; display: flex; align-items: center; padding: 0 44px; gap: 36px; box-shadow: 0 12px 0 rgba(0,0,0,.28); }
+  #four { gap: 18px !important; padding: 0 36px !important; }
+  #four svg { width: 92px; height: 148px; flex: none; }
+  #fourT { font-size: 62px; font-weight: 900; line-height: 1.25; margin-left: 28px; white-space: nowrap; }
+  #fourT b { color: #d93a76; }
+
+  /* donut */
+  #donut { position: absolute; left: 70px; top: 180px; width: 640px; height: 640px; }
+  #dc { position: absolute; left: 70px; top: 180px; width: 640px; height: 640px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #dc .a { font-size: 118px; font-weight: 900; line-height: 1; }
+  #dc .b { font-size: 44px; font-weight: 700; color: #d9d2ff; margin-top: 8px; }
+  .lg { position: absolute; left: 760px; width: 660px; height: 112px; display: flex; align-items: center; gap: 20px; font-size: 46px; font-weight: 700; white-space: nowrap; }
+  .lg i { width: 40px; height: 40px; border-radius: 12px; flex: none; }
+  .lg .p { margin-left: auto; font-size: 62px; font-weight: 900; color: #ffcf4d; }
+  .lg small { font-size: 34px; font-weight: 500; color: #d9d2ff; }
+
+  /* effect */
+  #big { position: absolute; left: 90px; top: 150px; font-size: 280px; font-weight: 900; line-height: 1; color: #5ee2a0; letter-spacing: -4px; text-shadow: 0 13px 0 #0a6a3d, 0 0 70px rgba(94,226,160,.4); }
+  #bigL { position: absolute; left: 96px; top: 438px; font-size: 54px; font-weight: 900; }
+  #sc { position: absolute; left: 90px; top: 530px; width: 700px; height: 330px; border-radius: 30px; background: rgba(255,253,247,.97); color: #21281f; padding: 28px 38px; box-shadow: 0 12px 0 rgba(0,0,0,.28); }
+  #sc .tt { font-size: 50px; font-weight: 900; }
+  #scTrack { position: relative; height: 68px; margin-top: 30px; border-radius: 34px; background: #e6e2d4; overflow: hidden; }
+  #scFill { position: absolute; left: 0; top: 0; bottom: 0; background: #0a8a4d; }
+  #scV { font-size: 50px; font-weight: 900; margin-top: 26px; white-space: nowrap; }
+  #scV b { color: #0a8a4d; }
+  #wf { position: absolute; left: 850px; top: 190px; width: 540px; }
+  #wfT { position: absolute; left: 850px; top: 730px; width: 560px; font-size: 54px; font-weight: 900; line-height: 1.25; }
+  #wfT b { color: #5ee2a0; font-size: 72px; }
+  .cell { position: absolute; width: 46px; height: 46px; border-radius: 11px; background: rgba(255,255,255,.15); }
+
+  /* trend */
+  .vb { position: absolute; bottom: 294px; width: 190px; border-radius: 22px 22px 0 0; }
+  .vv { position: absolute; width: 270px; text-align: center; font-size: 74px; font-weight: 900; }
+  .vl { position: absolute; top: 794px; width: 270px; text-align: center; font-size: 38px; font-weight: 700; white-space: nowrap; line-height: 1.2; }
+  #axisB { position: absolute; left: 90px; top: 786px; width: 1280px; height: 6px; background: #cfc6ff; border-radius: 3px; }
+  #tNote { position: absolute; left: 80px; top: 142px; font-size: 38px; font-weight: 700; color: #d9d2ff; }
+
+  /* end */
+  #e1 { position: absolute; left: 100px; top: 90px; font-size: 118px; font-weight: 900; letter-spacing: 6px; white-space: nowrap; text-shadow: 0 9px 0 rgba(0,0,0,.28); }
+  #e1 b { color: #ffcf4d; }
+  .chk { position: absolute; left: 110px; font-size: 56px; font-weight: 900; white-space: nowrap; display: flex; align-items: center; gap: 24px; }
+  .chk i { font-style: normal; width: 74px; height: 74px; border-radius: 50%; background: #0a8a4d; display: flex; align-items: center; justify-content: center; font-size: 50px; }
+  #clinic { position: absolute; left: 100px; top: 616px; padding: 20px 50px; border-radius: 26px; background: #ffcf4d; color: #2c2166; font-size: 58px; font-weight: 900; white-space: nowrap; box-shadow: 0 10px 0 #a07a15; }
+  #src { position: absolute; left: 100px; top: 740px; width: 1230px; font-size: 34px; font-weight: 500; line-height: 1.38; color: #e6e2ff; }
+
+  #sub { position: absolute; left: 0; right: 0; bottom: 62px; text-align: center; }
+  #sub span { display: inline-block; padding: 10px 38px; border-radius: 18px; background: rgba(10,8,30,.82); font-size: 50px; font-weight: 700; letter-spacing: 2px; white-space: nowrap; }
+  #foot { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 30px; color: #d9d2ff; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="stripes"></div><div id="glow"></div><div id="ground"></div>
+  <div id="shake">
+    <div class="scene" id="S0">
+      <div id="t1">減重門診</div>
+      <div id="t2"></div>
+      <div id="chip">民國 115 年 10 月 門診數據</div>
+    </div>
+
+    <div class="scene" id="S1">
+      <div class="h">來看診的是<b>哪些人</b>？</div>
+      <div class="kpi" id="k0" style="left:70px;top:160px"><div class="l">累積追蹤個案</div><div class="v"><span id="v0"></span><small>位</small></div></div>
+      <div class="kpi" id="k1" style="left:740px;top:160px"><div class="l">平均年齡</div><div class="v"><span id="v1"></span><small>歲</small></div></div>
+      <div class="kpi" id="k2" style="left:70px;top:356px"><div class="l">平均起始體重</div><div class="v"><span id="v2"></span><small>公斤</small></div></div>
+      <div class="kpi" id="k3" style="left:740px;top:356px"><div class="l">平均起始 BMI</div><div class="v"><span id="v3"></span></div></div>
+      <div id="split"><div id="sF">女性 59%</div><div id="sM">男性 41%</div></div>
+      <div id="banner">
+        <div class="n"><span id="v71"></span>%</div>
+        <div class="x">來診前半年<br>體重正在上升</div>
+        <svg viewBox="0 0 190 150"><path id="arrow" d="M12 132 L66 88 L104 108 L176 22 M176 22 L132 26 M176 22 L172 68" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="scene" id="S2">
+      <div class="h">不只是體重：<b>常合併的健康問題</b></div>
+      <div id="bars2"></div>
+      <div id="four">
+        <svg viewBox="0 0 110 176"><g id="p0" class="person"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
+        <svg viewBox="0 0 110 176"><g id="p1" class="person"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
+        <svg viewBox="0 0 110 176"><g id="p2" class="person"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
+        <svg viewBox="0 0 110 176"><g id="p3" class="person" fill="#cfcbbd"><circle cx="55" cy="36" r="30"/><path d="M12 170 C12 90 98 90 98 170 Z"/></g></svg>
+        <div id="fourT">每 4 人約有 <b>3 人</b><br>合併至少一種健康問題</div>
+      </div>
+    </div>
+
+    <div class="scene" id="S3">
+      <div class="h">大家選擇的<b>治療方式</b></div>
+      <svg id="donut" viewBox="0 0 640 640"><g id="arcs" transform="rotate(-90 320 320)"></g></svg>
+      <div id="dc"><div class="a" id="dcN"></div><div class="b">位個案</div></div>
+      <div id="lgs"></div>
+    </div>
+
+    <div class="scene" id="S4">
+      <div class="h" style="font-size:72px">追蹤 3–5 個月，<b>可以減多少</b>？</div>
+      <div id="big"><span id="bigN"></span>%</div>
+      <div id="bigL">平均體重下降（n=147）</div>
+      <div id="sc">
+        <div class="tt">以 80 公斤為例</div>
+        <div id="scTrack"><div id="scFill"></div></div>
+        <div id="scV"><span id="scN"></span> 公斤　<b>減約 4.5 公斤</b></div>
+      </div>
+      <div id="wf"></div>
+      <div id="wfT"><b>51%</b> 減掉 5% 以上<br>醫學上有意義的改善</div>
+    </div>
+
+    <div class="scene" id="S5">
+      <div class="h" style="font-size:72px">持續回診的<b>平均減重</b></div>
+      <div id="tNote">各區間是不同個案，不是同一群人的變化</div>
+      <div id="axisB"></div>
+      <div id="vbs"></div>
+    </div>
+
+    <div class="scene" id="S6">
+      <div class="h" style="font-size:72px">大家可接受的<b>每月預算</b></div>
+      <div id="tNote2" class="abs" style="left:80px;top:142px;font-size:38px;font-weight:700;color:#d9d2ff">初診問卷（n=445），不是實際花費</div>
+      <div id="bars6"></div>
+    </div>
+
+    <div class="scene" id="S7">
+      <div id="e1">減重，<b>我們陪你一起走</b></div>
+      <div class="chk" id="c0" style="top:270px"><i>✓</i>先評估：體重、共病與生活習慣</div>
+      <div class="chk" id="c1" style="top:380px"><i>✓</i>再討論：適合你的治療方式與預算</div>
+      <div class="chk" id="c2" style="top:490px"><i>✓</i>持續回診：一起看成效、一起調整</div>
+      <div id="clinic">高雄榮總 家醫部 減重門診</div>
+      <div id="src">資料來源：本門診 883 位追蹤個案與 445 份初診問卷（民國 114 年 9 月至 115 年 10 月）。以上為整體平均，個人成效因人而異；實際治療以醫師評估為準。</div>
+    </div>
+
+    <img class="doc" id="d0" src="assets/whoop.png" alt="">
+    <img class="doc" id="d1" src="assets/bravo.png" alt="">
+    <canvas id="fx" width="1920" height="1080"></canvas>
+  </div>
+  <div id="flash"></div>
+  <div id="sub"><span id="subT"></span></div>
+  <div id="foot">高雄榮總 家庭醫學部 ・ 減重門診</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, d) => clamp((t - a) / d);
+const outCubic = x => 1 - (1 - x) ** 3;
+const inOut = x => x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2;
+const outBack = x => { const c = 1.9; return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
+const rnd = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+const SEG = window.TIMING?.segments || [];
+const TOTAL = window.TIMING?.total || 75;
+const A = k => SEG.find(s => s.k === k)?.start ?? 0;
+const E = k => SEG.find(s => s.k === k)?.end ?? 0;
+const pop = (el, t, t0, d = .38) => { const a = P(t, t0, d); el.style.opacity = P(t, t0, .1); el.style.transform = `scale(${t >= t0 ? outBack(a) : 0})`; };
+const slideIn = (el, t, t0, dx = -500, d = .38) => { const a = outBack(P(t, t0, d)); el.style.opacity = P(t, t0, .1); el.style.transform = `translateX(${(1 - a) * dx}px)`; };
+const num = (t, t0, d, v, dec = 0) => (v * outCubic(P(t, t0, d))).toFixed(dec);
+
+// 靜態組件
+const t2 = '大家的成績單'; $('t2').innerHTML = [...t2].map(c => `<span>${c}</span>`).join('');
+const makeBars = (host, rows, top, gap) => { rows.forEach((r, i) => {
+  const d = document.createElement('div'); d.className = 'row'; d.id = host + i; d.style.top = top + i * gap + 'px';
+  d.innerHTML = `<div class="lab">${r.l}</div><div class="tr"><div class="fi" style="background:${r.c}"></div></div><div class="pc"></div>`;
+  $(host).appendChild(d); }); };
+// 數值對照 2026_10 月報：疾病 n/445；預算 n/445（考慮手術 n=8 依 n<10 守則不呈現）
+const R2 = [{ l: '糖尿病／前期', v: 35.5, c: '#ff7a59' }, { l: '脂肪肝', v: 34.4, c: '#f6b73c' }, { l: '高血脂', v: 30.6, c: '#b47ae8' }, { l: '高血壓', v: 29.4, c: '#5aa2ff' }, { l: '睡眠呼吸中止', v: 11.46, c: '#2fd2c2' }];
+makeBars('bars2', R2, 150, 92);
+const R6 = [{ l: '1,000 元以下', v: 9.7, c: '#2fd2c2' }, { l: '1,000–4,500 元', v: 20.0, c: '#5aa2ff' }, { l: '4,500–8,000 元', v: 20.0, c: '#b47ae8' }, { l: '8,000–15,000 元', v: 48.5, c: '#ffcf4d' }];
+makeBars('bars6', R6, 240, 136);
+const TX = [{ l: '腸泌素藥物', p: '43%', n: 380, c: '#2fd2c2' }, { l: '生活型態調整<small>（不用藥）</small>', p: '34%', n: 297, c: '#5ee27f' }, { l: '其他口服藥物', p: '15%', n: 130, c: '#f6b73c' }, { l: '藥物併用／轉換', p: '6.6%', n: 58, c: '#b47ae8' }, { l: '減重手術評估', p: '1.6%', n: 14, c: '#ff7a9e' }];
+const R = 250, CIRC = 2 * Math.PI * R;
+TX.forEach((x, i) => {
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('cx', 320); c.setAttribute('cy', 320); c.setAttribute('r', R); c.setAttribute('fill', 'none'); c.setAttribute('stroke', x.c); c.setAttribute('stroke-width', 86); c.id = 'arc' + i;
+  $('arcs').appendChild(c);
+  const d = document.createElement('div'); d.className = 'lg'; d.id = 'lg' + i; d.style.top = 180 + i * 128 + 'px';
+  d.innerHTML = `<i style="background:${x.c}"></i><span>${x.l}</span><span class="p">${x.p}</span>`;
+  $('lgs').appendChild(d);
+});
+for (let i = 0; i < 100; i++) { const c = document.createElement('div'); c.className = 'cell'; c.id = 'cell' + i; c.style.left = (i % 10) * 54 + 'px'; c.style.top = Math.floor(i / 10) * 54 + 'px'; $('wf').appendChild(c); }
+const TR = [{ l: '3–5 個月', s: 'n=147', v: 5.6, c: '#5aa2ff' }, { l: '6–8 個月', s: 'n=44', v: 8.1, c: '#2fd2c2' }, { l: '9–11 個月', s: 'n=35', v: 10.2, c: '#5ee27f' }, { l: '12 個月以上', s: 'n=78', v: 8.0, c: '#f6b73c' }];
+TR.forEach((x, i) => {
+  const cx = 280 + i * 300;
+  $('vbs').insertAdjacentHTML('beforeend', `<div class="vb" id="vb${i}" style="left:${cx - 95}px;background:linear-gradient(180deg,${x.c},${x.c}aa)"></div><div class="vv" id="vv${i}" style="left:${cx - 135}px"></div><div class="vl" style="left:${cx - 135}px">${x.l}<br><span style="font-size:32px;font-weight:500;color:#d9d2ff">${x.s}</span></div>`);
+});
+// 字幕區與長條圖底部：vb bottom 對齊座標 836
+const fx = $('fx').getContext('2d');
+function burst(t, t0, x, y, color, n = 36, spd = 620, life = 1) {
+  const a = t - t0; if (a < 0 || a > life) return;
+  const k = a / life;
+  for (let i = 0; i < n; i++) {
+    const ang = rnd(i + t0) * Math.PI * 2, v = spd * (.35 + rnd(i * 3.3 + t0) * .8);
+    const px = x + Math.cos(ang) * v * a, py = y + Math.sin(ang) * v * a + 640 * a * a;
+    fx.globalAlpha = 1 - k; fx.fillStyle = color[i % color.length];
+    fx.beginPath(); fx.arc(px, py, (5 + rnd(i * 7.1) * 12) * (1 - k * .5), 0, 7); fx.fill();
+  }
+  fx.globalAlpha = 1;
+}
+function ring(t, t0, x, y, color, r1 = 420, life = .55) {
+  const a = (t - t0) / life; if (a < 0 || a > 1) return;
+  fx.globalAlpha = 1 - a; fx.strokeStyle = color; fx.lineWidth = 28 * (1 - a) + 2;
+  fx.beginPath(); fx.arc(x, y, r1 * outCubic(a), 0, 7); fx.stroke(); fx.globalAlpha = 1;
+}
+
+$('arrow').style.strokeDasharray = 500;
+
+function render(t) {
+  fx.clearRect(0, 0, 1920, 1080);
+  $('stripes').style.transform = `translateX(${(t * 24) % 140}px)`;
+  $('glow').style.transform = `translate(${700 + Math.sin(t * .35) * 500}px, ${-60 + Math.sin(t * .7) * 50}px)`;
+
+  // 場景切換
+  const bounds = [0, A('ppl1'), A('dis1'), A('tx1'), A('eff1'), A('tr1'), A('bud1'), A('end1'), TOTAL + 1];
+  const OUTL = .28;
+  for (let i = 0; i < 8; i++) {
+    const a = bounds[i], b = bounds[i + 1];
+    const start = i === 0 ? 0 : a - .4, stop = b - .4;
+    const on = t >= start && t < stop + OUTL;
+    const el = $('S' + i); el.style.display = on ? '' : 'none';
+    if (on) {
+      const inn = i === 0 ? 1 : outCubic(P(t, start, .34)), out = P(t, stop, OUTL);
+      el.style.opacity = inn * (1 - out);
+      el.style.transform = `translateX(${(1 - inn) * 180 - out * 260}px)`;
+    }
+  }
+
+  // S0
+  pop($('t1'), t, .25);
+  $('t1').style.transformOrigin = '0 50%';
+  [...$('t2').children].forEach((c, i) => { const a = P(t, .55 + i * .09, .4); c.style.opacity = P(t, .55 + i * .09, .1); c.style.transform = `translateY(${(1 - outBack(a)) * -160}px) rotate(${(1 - a) * 18}deg)`; });
+  slideIn($('chip'), t, 1.35, -700);
+  burst(t, 1.25, 700, 460, ['#ffcf4d', '#fff', '#5ee27f', '#ff7a9e'], 54, 780, 1.15);
+
+  // S1
+  const p1 = A('ppl1'), p2 = A('ppl2'), p3 = A('ppl3');
+  slideIn($('k0'), t, p1, -700); $('v0').textContent = num(t, p1 + .1, 1, 883);
+  slideIn($('k1'), t, p2 - .05, 700); $('v1').textContent = num(t, p2 + .05, .8, 42.7, 1);
+  slideIn($('k2'), t, p2 + 1.4, -700); $('v2').textContent = num(t, p2 + 1.5, .8, 90.9, 1);
+  slideIn($('k3'), t, p2 + 1.9, 700); $('v3').textContent = num(t, p2 + 2, .8, 32.8, 1);
+  const spl = P(t, p3 - .75, .55); $('split').style.opacity = spl > 0 ? 1 : 0; $('split').style.clipPath = `inset(0 ${(1 - inOut(spl)) * 100}% 0 0 round 38px)`;
+  $('sF').style.width = '59%';
+  const bn = outBack(P(t, p3 + .05, .4)); $('banner').style.opacity = P(t, p3 + .05, .1); $('banner').style.transform = `translateY(${(1 - bn) * 240}px)`;
+  $('v71').textContent = num(t, p3 + .2, 1, 71);
+  $('arrow').style.strokeDashoffset = 500 * (1 - outCubic(P(t, p3 + .5, .8)));
+  burst(t, p3 + 1.2, 500, 760, ['#ffcf4d', '#fff', '#ff7a9e'], 36, 620, .9);
+
+  // S2
+  const d1 = A('dis1'), d3 = A('dis3');
+  R2.forEach((r, i) => {
+    const t0 = d1 + .05 + i * .28, a = outCubic(P(t, t0, .7));
+    const row = $('bars2' + i), w = 760 * r.v / 40;
+    row.style.opacity = P(t, t0 - .05, .15);
+    row.querySelector('.fi').style.width = w * a + 'px';
+    const pc = row.querySelector('.pc'); pc.textContent = (r.v * a).toFixed(0) + '%'; pc.style.left = 424 + w * a + 22 + 'px';
+    pc.style.color = i === 0 ? '#ffcf4d' : '#fff';
+  });
+  const fo = outBack(P(t, d3 - .1, .4)); $('four').style.opacity = P(t, d3 - .1, .1); $('four').style.transform = `translateY(${(1 - fo) * 280}px)`;
+  [0, 1, 2, 3].forEach(i => { const lit = i < 3 ? outBack(P(t, d3 + 1.1 + i * .28, .3)) : 1, g = $('p' + i);
+    g.style.fill = i < 3 && t >= d3 + 1.1 + i * .28 ? '#d93a76' : '#cfcbbd'; g.style.transformOrigin = '55px 100px'; g.style.transform = `scale(${i < 3 ? .86 + .14 * lit : .86})`; });
+
+  // S3
+  const tx = A('tx1');
+  const grow = inOut(P(t, tx + .05, 1.3)); let acc = 0;
+  TX.forEach((x, i) => {
+    const frac = x.n / 883, arc = $('arc' + i), L = CIRC * frac * grow;
+    arc.setAttribute('stroke-dasharray', `${Math.max(0, L - 4)} ${CIRC}`);
+    arc.setAttribute('stroke-dashoffset', -acc * grow * CIRC);
+    acc += frac;
+    const lt = tx + .12 + i * .23, l = $('lg' + i); slideIn(l, t, lt, 500);
+  });
+  $('dcN').textContent = num(t, tx + .1, 1.2, 883);
+
+  // S4
+  const e1 = A('eff1'), e2 = A('eff2'), e3 = A('eff3');
+  $('bigN').textContent = num(t, e1 + .55, 1.3, 5.6, 1);
+  const bg = outBack(P(t, e1 + .4, .4)); $('big').style.opacity = P(t, e1 + .4, .1); $('big').style.transform = `scale(${.5 + .5 * bg})`; $('big').style.transformOrigin = '0 60%';
+  slideIn($('bigL'), t, e1 + 1.5, -600);
+  burst(t, e1 + 1.9, 440, 280, ['#5ee2a0', '#fff', '#ffcf4d'], 46, 720, 1);
+  ring(t, e1 + 1.9, 440, 280, '#5ee2a0', 480, .6);
+  const so = outBack(P(t, e2 - .2, .35)); $('sc').style.opacity = P(t, e2 - .2, .1); $('sc').style.transform = `translateY(${(1 - so) * 340}px)`;
+  const sa = inOut(P(t, e2 + .25, 1.3)); $('scFill').style.width = (100 - 5.6 * sa * 1) + '%';
+  $('scN').textContent = (80 - 4.5 * sa).toFixed(1);
+  for (let i = 0; i < 100; i++) { const c = $('cell' + i); const on = i < 51 && t >= e3 + .15 + i * .03; c.style.background = on ? '#5ee2a0' : 'rgba(255,255,255,.15)'; c.style.transform = on ? `scale(${.7 + .3 * outBack(P(t, e3 + .15 + i * .03, .2))})` : 'scale(1)'; }
+  const wo = P(t, e3 - .3, .25); $('wf').style.opacity = wo; $('wfT').style.opacity = P(t, e3 + 1.6, .25);
+
+  // S5：柱高 = 值 × 50，底部對齊軸線
+  const tr = A('tr1');
+  TR.forEach((x, i) => {
+    const t0 = tr + .1 + i * .42, a = outBack(P(t, t0, .55)), h = x.v * 44 * Math.max(0, a);
+    const b = $('vb' + i); b.style.height = h + 'px';
+    const v = $('vv' + i); v.textContent = (x.v * outCubic(P(t, t0, .55))).toFixed(1) + '%'; v.style.top = 786 - h - 94 + 'px'; v.style.opacity = P(t, t0, .15);
+    v.style.color = '#fff';
+  });
+
+  // S6
+  const b1 = A('bud1');
+  R6.forEach((r, i) => {
+    const t0 = b1 + .08 + i * .28, a = outCubic(P(t, t0, .7)), row = $('bars6' + i), w = 760 * r.v / 55;
+    row.style.opacity = P(t, t0 - .05, .15); row.querySelector('.fi').style.width = w * a + 'px';
+    const pc = row.querySelector('.pc'); pc.textContent = (r.v * a).toFixed(0) + '%'; pc.style.left = 424 + w * a + 22 + 'px';
+    pc.style.color = i === 3 ? '#ffcf4d' : '#fff';
+  });
+  burst(t, b1 + 1.3, 940, 690, ['#ffcf4d', '#fff'], 28, 500, .8);
+
+  // S7
+  const f1 = A('end1'), f2 = A('end2');
+  pop($('e1'), t, f1 - .05); $('e1').style.transformOrigin = '0 50%';
+  ['c0', 'c1', 'c2'].forEach((c, i) => slideIn($(c), t, f1 + .9 + i * .42, -900));
+  slideIn($('clinic'), t, f2 - .1, -900);
+  $('src').style.opacity = P(t, f2 + .3, .4);
+  burst(t, f1 + .05, 760, 160, ['#ffcf4d', '#fff', '#5ee27f', '#ff7a9e'], 60, 840, 1.15);
+
+  // 醫師貼圖：依場景換姿勢與位置
+  const docs = [[0, 'd0'], [A('ppl1') - .4, 'd0'], [A('dis1') - .4, 'd1'], [A('tx1') - .4, 'd0'], [A('eff1') - .4, 'd1'], [A('tr1') - .4, 'd0'], [A('bud1') - .4, 'd0'], [A('end1') - .4, 'd1']];
+  let curI = 0; docs.forEach((d, i) => { if (t >= d[0]) curI = i; });
+  const dSwap = outBack(P(t, docs[curI][0] + .1, .42));
+  const bob = Math.sin(t * 2.6) * 10, tilt = Math.sin(t * 1.7) * 2;
+  const big = curI === 0 ? 1.34 : 1;
+  ['d0', 'd1'].forEach(id => {
+    const el = $(id), onDoc = docs[curI][1] === id;
+    el.style.display = onDoc ? '' : 'none';
+    if (onDoc) el.style.transform = `translate(${1440 - (big - 1) * 170}px, ${410 - (big - 1) * 300 + bob}px) scale(${big * dSwap}) rotate(${tilt}deg)`;
+  });
+
+  // 字幕
+  const cur = SEG.find((s, i) => t >= s.start - .05 && t < (SEG[i + 1]?.start ?? TOTAL) - .02);
+  const sub = cur && t < cur.end + .3 ? cur.sub : '';
+  const subEl = $('subT'); if (subEl.textContent !== sub) subEl.textContent = sub;
+  subEl.style.display = sub ? '' : 'none';
+}
+window.render = render;
+render(0);
+</script>
+</body>
+</html>

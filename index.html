@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<title>停滯期魔王關（試作）</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #14112b; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; color: #fff;
+    font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    background: linear-gradient(180deg, #1b1642 0%, #2c2166 62%, #47308a 100%); }
+  #stripes { position: absolute; inset: -200px; opacity: .10;
+    background: repeating-linear-gradient(-58deg, transparent 0 60px, #f6b73c 60px 72px, transparent 72px 100px, #7fd6ff 100px 104px); }
+  #glow { position: absolute; width: 1200px; height: 1200px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,120,200,.35), transparent 62%); }
+  #ground { position: absolute; left: 0; right: 0; bottom: 0; height: 190px;
+    background: linear-gradient(180deg, #5a3ca8, #38277a); border-top: 6px solid #8d6fe0; }
+  #shake, #world { position: absolute; inset: 0; transform-origin: 1300px 640px; }
+  .abs { position: absolute; }
+  canvas { position: absolute; inset: 0; pointer-events: none; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+  #hero { width: 250px; height: 250px; }
+  #boss { width: 400px; height: 400px; transform-origin: 50% 100%; }
+  #chart { position: absolute; inset: 0; }
+  .axis-label { fill: #cfc6ff; font-size: 40px; font-weight: 700; }
+  #hA { left: 0; right: 0; top: 70px; text-align: center; font-size: 104px; font-weight: 900; letter-spacing: 6px;
+    text-shadow: 0 8px 0 rgba(0,0,0,.28); }
+  #q { width: 110px; height: 110px; border-radius: 50%; background: #fff; color: #5a3ca8; font-size: 78px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; }
+  #title { left: 0; right: 0; top: 56px; display: flex; justify-content: center; gap: 28px; font-size: 136px; font-weight: 900;
+    letter-spacing: 8px; white-space: nowrap; text-shadow: 0 10px 0 #7a1f5c, 0 0 50px rgba(255,120,200,.6); }
+  #title b { color: #ffcf4d; font-weight: 900; }
+  #hpWrap { width: 560px; }
+  #hpLabel { font-size: 42px; font-weight: 900; color: #ffcf4d; margin-bottom: 10px; letter-spacing: 4px; }
+  #hpTrack { height: 44px; border-radius: 24px; background: rgba(0,0,0,.45); border: 5px solid #fff; overflow: hidden; }
+  #hpFill { height: 100%; background: linear-gradient(90deg, #ff5f9e, #ffcf4d); }
+  .chip { display: flex; align-items: center; gap: 30px; padding: 34px 60px; border-radius: 34px; font-size: 92px; font-weight: 900; white-space: nowrap; }
+  #good { left: 470px; top: 210px; background: #0a8a4d; box-shadow: 0 16px 0 #05603a; }
+  #bad { left: 470px; top: 480px; background: #57507e; box-shadow: 0 16px 0 #3a3560; color: #e6e2f7; }
+  #badLine { position: absolute; left: 34px; right: 34px; top: 50%; height: 16px; margin-top: -8px; background: #ff5f9e; border-radius: 10px; transform-origin: 0 50%; }
+  .ic { font-size: 92px; font-weight: 900; }
+  #eat { left: 0; right: 0; top: 70px; text-align: center; }
+  #eatT { font-size: 112px; font-weight: 900; letter-spacing: 6px; text-shadow: 0 8px 0 rgba(0,0,0,.28); }
+  #plate { position: absolute; left: 710px; top: 270px; width: 500px; height: 500px; }
+  #cross { position: absolute; left: 660px; top: 225px; width: 600px; height: 600px; }
+  #heading { left: 80px; top: 58px; font-size: 96px; font-weight: 900; letter-spacing: 6px; text-shadow: 0 8px 0 rgba(0,0,0,.28); }
+  #heading b { color: #ffcf4d; }
+  .card { position: absolute; left: 80px; width: 790px; height: 190px; border-radius: 34px; display: flex; align-items: center; gap: 32px; padding: 0 40px;
+    font-size: 78px; font-weight: 900; white-space: nowrap; }
+  .card svg { width: 124px; height: 124px; flex: none; }
+  #c1 { top: 200px; background: #0a8a4d; box-shadow: 0 14px 0 #05603a; }
+  #c2 { top: 425px; background: #2f6fd8; box-shadow: 0 14px 0 #1c4a9c; }
+  #c3 { top: 650px; background: #c2620a; box-shadow: 0 14px 0 #8a4505; }
+  .note { position: absolute; left: 120px; width: 1190px; border-radius: 36px; display: flex; align-items: center; gap: 44px; padding: 40px 54px; font-size: 80px; font-weight: 900; line-height: 1.22; background: rgba(255,253,247,.97); color: #21281f; box-shadow: 0 16px 0 rgba(0,0,0,.3); }
+  .note svg { width: 150px; height: 150px; flex: none; }
+  #n1 { top: 110px; }
+  #n2 { top: 450px; }
+  #n2 b { color: #0a8a4d; }
+  #badge { width: 300px; height: 300px; }
+  #sub { position: absolute; left: 0; right: 0; bottom: 74px; text-align: center; }
+  #sub span { display: inline-block; padding: 14px 44px; border-radius: 20px; background: rgba(10,8,30,.82); font-size: 56px; font-weight: 700; letter-spacing: 3px; }
+  #foot { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font-size: 30px; color: #d9d2ff; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="stripes"></div>
+  <div id="glow"></div>
+  <div id="ground"></div>
+  <div id="shake">
+    <div id="world">
+      <svg id="chart" viewBox="0 0 1920 1080">
+        <line x1="170" y1="150" x2="170" y2="780" stroke="#cfc6ff" stroke-width="7" stroke-linecap="round"/>
+        <line x1="170" y1="780" x2="1780" y2="780" stroke="#cfc6ff" stroke-width="7" stroke-linecap="round"/>
+        <text class="axis-label" x="195" y="190">體重</text>
+        <text class="axis-label" x="1680" y="840">時間</text>
+        <path id="curve" fill="none" stroke="#ffcf4d" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <img id="hero" class="abs" src="assets/s3-mascot-cut.png" alt="">
+      <div id="q" class="abs">?</div>
+      <svg id="boss" class="abs" viewBox="0 0 400 400">
+        <path d="M110 120 L70 22 L175 88 Z" fill="#ffcf4d" stroke="#7a4a00" stroke-width="7" stroke-linejoin="round"/>
+        <path d="M290 120 L330 22 L225 88 Z" fill="#ffcf4d" stroke="#7a4a00" stroke-width="7" stroke-linejoin="round"/>
+        <path d="M60 390 C10 300 25 90 200 80 C375 90 390 300 340 390 Z" fill="#8b3fd1" stroke="#fff" stroke-width="10"/>
+        <path d="M95 385 C75 330 100 280 200 280 C300 280 325 330 305 385 Z" fill="#b47ae8"/>
+        <g id="eyesOk">
+          <path d="M105 150 L180 185" stroke="#2a0f45" stroke-width="16" stroke-linecap="round"/>
+          <path d="M295 150 L220 185" stroke="#2a0f45" stroke-width="16" stroke-linecap="round"/>
+          <circle cx="145" cy="210" r="27" fill="#fff"/><circle cx="255" cy="210" r="27" fill="#fff"/>
+          <circle cx="150" cy="214" r="13" fill="#2a0f45"/><circle cx="250" cy="214" r="13" fill="#2a0f45"/>
+        </g>
+        <g id="eyesHit" stroke="#2a0f45" stroke-width="15" stroke-linecap="round">
+          <path d="M122 190 L168 232"/><path d="M168 190 L122 232"/>
+          <path d="M232 190 L278 232"/><path d="M278 190 L232 232"/>
+        </g>
+        <path d="M150 262 Q200 240 250 262 L232 272 L216 258 L200 272 L184 258 L168 272 Z" fill="#fff" stroke="#2a0f45" stroke-width="5" stroke-linejoin="round"/>
+      </svg>
+      <div id="hpWrap" class="abs">
+        <div id="hpLabel">魔王 HP</div>
+        <div id="hpTrack"><div id="hpFill"></div></div>
+      </div>
+    </div>
+
+    <div id="hA" class="abs">體重卡住了</div>
+    <div id="title" class="abs"><span>停滯期</span><b>＝</b><span>魔王關</span></div>
+
+    <div id="good" class="abs chip"><span class="ic">✓</span>身體的生理反應</div>
+    <div id="bad" class="abs chip"><span class="ic">✕</span>你失敗了<div id="badLine"></div></div>
+
+    <div id="eat" class="abs"><div id="eatT">先不要急著吃更少</div></div>
+    <svg id="plate" viewBox="0 0 500 500">
+      <circle cx="250" cy="250" r="240" fill="#fffdf7" stroke="#d9d2c0" stroke-width="10"/>
+      <circle cx="250" cy="250" r="176" fill="none" stroke="#e9e3d2" stroke-width="7"/>
+      <g id="food">
+        <circle cx="205" cy="205" r="62" fill="#c2620a"/>
+        <circle cx="305" cy="225" r="52" fill="#0a8a4d"/>
+        <circle cx="240" cy="315" r="56" fill="#f6b73c"/>
+      </g>
+    </svg>
+    <svg id="cross" viewBox="0 0 600 600">
+      <circle cx="300" cy="300" r="275" fill="none" stroke="#ff5f9e" stroke-width="40"/>
+      <line x1="105" y1="105" x2="495" y2="495" stroke="#ff5f9e" stroke-width="40"/>
+    </svg>
+
+    <div id="heading" class="abs">打贏魔王靠<b>三招</b></div>
+    <div id="c1" class="card">
+      <svg viewBox="0 0 100 100"><g stroke="#fff" stroke-width="10" stroke-linecap="round"><line x1="24" y1="50" x2="76" y2="50"/><line x1="24" y1="26" x2="24" y2="74"/><line x1="76" y1="26" x2="76" y2="74"/><line x1="9" y1="36" x2="9" y2="64"/><line x1="91" y1="36" x2="91" y2="64"/></g></svg>
+      肌力訓練加量
+    </div>
+    <div id="c2" class="card">
+      <svg viewBox="0 0 100 100"><g fill="#fff"><ellipse cx="30" cy="30" rx="14" ry="20" transform="rotate(-15 30 30)"/><circle cx="36" cy="60" r="8"/><ellipse cx="70" cy="48" rx="14" ry="20" transform="rotate(15 70 48)"/><circle cx="64" cy="79" r="8"/></g></svg>
+      把步數補回來
+    </div>
+    <div id="c3" class="card">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#fff" stroke-width="9"/><path d="M50 50 L50 16 A34 34 0 0 1 80 66 Z" fill="#fff"/><path d="M50 50 L80 66 A34 34 0 0 1 22 70 Z" fill="#ffe2b8"/></svg>
+      吃得抗餓
+    </div>
+
+    <div id="n1" class="note">
+      <svg viewBox="0 0 100 100"><g fill="none" stroke="#c2620a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><rect x="32" y="22" width="36" height="56" rx="7"/><line x1="50" y1="78" x2="50" y2="96"/><line x1="32" y1="10" x2="68" y2="10"/><line x1="50" y1="10" x2="50" y2="22"/><line x1="32" y1="40" x2="48" y2="40"/><line x1="32" y1="56" x2="48" y2="56"/></g></svg>
+      <div>腸泌素針劑<br>不要自己停</div>
+    </div>
+    <div id="n2" class="note">
+      <svg viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="72" rx="10" fill="none" stroke="#0a8a4d" stroke-width="8"/><line x1="10" y1="42" x2="90" y2="42" stroke="#0a8a4d" stroke-width="8"/><line x1="32" y1="8" x2="32" y2="28" stroke="#0a8a4d" stroke-width="8" stroke-linecap="round"/><line x1="68" y1="8" x2="68" y2="28" stroke="#0a8a4d" stroke-width="8" stroke-linecap="round"/><path d="M50 52 V82 M35 67 H65" stroke="#c2620a" stroke-width="10" stroke-linecap="round"/></svg>
+      <div>卡超過 <b>2 個月</b><br>回診一起找原因</div>
+    </div>
+    <img id="badge" class="abs" src="assets/s3-badge-cut.png" alt="">
+
+    <canvas id="fx" width="1920" height="1080"></canvas>
+  </div>
+  <div id="flash"></div>
+  <div id="sub"><span id="subT"></span></div>
+  <div id="foot">高雄榮總 家庭醫學部 ・ 減重門診</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const P = (t, a, d) => clamp((t - a) / d);
+const outCubic = x => 1 - (1 - x) ** 3;
+const inOut = x => x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2;
+const outBack = x => { const c = 1.9; return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
+const inQuad = x => x * x;
+const outBounce = x => { const n = 7.5625, d = 2.75;
+  if (x < 1 / d) return n * x * x;
+  if (x < 2 / d) return n * (x -= 1.5 / d) * x + .75;
+  if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + .9375;
+  return n * (x -= 2.625 / d) * x + .984375; };
+const keys = (t, k, e = inOut) => {
+  if (t <= k[0][0]) return k[0][1];
+  for (let i = 1; i < k.length; i++) if (t < k[i][0]) {
+    const [a, va] = k[i - 1], [b, vb] = k[i];
+    return va + (vb - va) * e((t - a) / (b - a));
+  }
+  return k[k.length - 1][1];
+};
+// 種子亂數：同一格永遠畫出同樣的粒子
+const rnd = s => { const x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+const SEG = window.TIMING?.segments || [];
+const TOTAL = window.TIMING?.total || 25.2;
+const S = i => SEG[i]?.start ?? 0;
+
+// 體重曲線（示意）：下滑後走平
+const CX0 = 190, CX1 = 1080, CXE = 1720, CY0 = 230, CY1 = 640;
+const curveY = x => x >= CX1 ? CY1 : CY0 + (CY1 - CY0) * (1 - ((CX1 - x) / (CX1 - CX0)) ** 2);
+let d = '';
+for (let x = CX0; x <= CXE; x += 10) d += (d ? 'L' : 'M') + x + ' ' + curveY(x).toFixed(1);
+$('curve').setAttribute('d', d);
+const curveLen = $('curve').getTotalLength();
+$('curve').style.strokeDasharray = curveLen;
+
+const show = (el, o, tf = '') => { el.style.opacity = o; el.style.display = o <= .001 ? 'none' : ''; if (tf !== null) el.style.transform = tf; };
+
+const fx = $('fx').getContext('2d');
+function burst(t, t0, x, y, color, n = 36, spd = 620, life = 1) {
+  const a = t - t0; if (a < 0 || a > life) return;
+  const k = a / life;
+  for (let i = 0; i < n; i++) {
+    const ang = rnd(i + t0) * Math.PI * 2, v = spd * (.35 + rnd(i * 3.3 + t0) * .8);
+    const px = x + Math.cos(ang) * v * a, py = y + Math.sin(ang) * v * a + 700 * a * a;
+    fx.globalAlpha = 1 - k;
+    fx.fillStyle = color[i % color.length];
+    const r = (5 + rnd(i * 7.1) * 12) * (1 - k * .5);
+    fx.beginPath(); fx.arc(px, py, r, 0, 7); fx.fill();
+  }
+  fx.globalAlpha = 1;
+}
+function ring(t, t0, x, y, color, r1 = 520, life = .55) {
+  const a = (t - t0) / life; if (a < 0 || a > 1) return;
+  fx.globalAlpha = 1 - a; fx.strokeStyle = color; fx.lineWidth = 34 * (1 - a) + 2;
+  fx.beginPath(); fx.arc(x, y, r1 * outCubic(a), 0, 7); fx.stroke(); fx.globalAlpha = 1;
+}
+function star(t, t0, x0, y0, x1, y1, color, d = .34) {
+  const a = (t - t0) / d; if (a < 0 || a > 1) return;
+  const e = inQuad(a), x = x0 + (x1 - x0) * e, y = y0 + (y1 - y0) * e - Math.sin(a * Math.PI) * 130;
+  fx.save(); fx.translate(x, y); fx.rotate(a * 9); fx.fillStyle = color; fx.strokeStyle = '#fff'; fx.lineWidth = 7;
+  fx.beginPath();
+  for (let i = 0; i < 10; i++) { const r = i % 2 ? 26 : 60, g = i / 10 * Math.PI * 2; fx.lineTo(Math.cos(g) * r, Math.sin(g) * r); }
+  fx.closePath(); fx.fill(); fx.stroke(); fx.restore();
+}
+
+function render(t) {
+  const tB = S(1), tBossLand = S(1) + 1.15, tC = S(2), tD = S(3), tE = S(4), tF = S(8), tG = S(9);
+  const hits = [S(5) + .36, S(6) + .36, S(7) + .36];
+  fx.clearRect(0, 0, 1920, 1080);
+
+  // 背景微動
+  $('stripes').style.transform = `translateX(${(t * 26) % 140}px)`;
+  $('glow').style.transform = `translate(${keys(t, [[0, 500], [tD, 900], [tE, 900], [tF, 1100]])}px, ${-40 + Math.sin(t * .7) * 40}px) scale(${1 + Math.sin(t * 1.3) * .05})`;
+
+  // 鏡頭：拉近平台，撞擊時晃動
+  const zoom = keys(t, [[tB - .2, 1], [tB + .7, 1.2], [tC - .15, 1.2], [tC + .4, 1]]);
+  $('world').style.transform = `scale(${zoom})`;
+  let sx = 0, sy = 0;
+  const shake = (t0, amp, life) => { const a = (t - t0) / life; if (a >= 0 && a < 1) { const m = amp * (1 - a) ** 2; sx += Math.sin(t * 91) * m; sy += Math.cos(t * 77) * m; } };
+  shake(tBossLand, 34, .6); hits.forEach(h => shake(h, 16, .35));
+  $('shake').style.transform = `translate(${sx}px, ${sy}px)`;
+  $('flash').style.opacity = .75 * (1 - P(t, tBossLand, .22)) * (t >= tBossLand ? 1 : 0)
+    + hits.reduce((v, h) => v + .28 * (1 - P(t, h, .14)) * (t >= h ? 1 : 0), 0);
+
+  // 曲線
+  const tip = CX0 + (CX1 + 90 - CX0) * outCubic(P(t, .35, 2.2));
+  const lenNow = ((tip - CX0) / (CXE - CX0)) * curveLen;
+  const lenPlus = lenNow + (CXE - CX1 - 90) / (CXE - CX0) * curveLen * P(t, tB, .7);
+  $('curve').style.strokeDashoffset = curveLen - lenPlus;
+  show($('chart'), 1 - P(t, tC - .1, .5));
+
+  // 主角
+  document.querySelectorAll('.axis-label').forEach(el => { el.style.opacity = 1 - P(t, tB, .4); });
+  const hx = t < tC ? tip : keys(t, [[tC, CX1 + 90], [tC + .5, 230], [tE, 230], [tE + .5, 1030], [tF, 1030], [tF + .5, 1560]]);
+  const groundY = t < tC ? curveY(Math.min(tip, CX1)) : keys(t, [[tC, CY1], [tC + .5, 860], [tF, 860], [tF + .5, 790]]);
+  const hop = t < 2.6 ? Math.abs(Math.sin(t * 7)) * 22 * (1 - P(t, 2.1, .5)) : 0;
+  const cheer = t > hits[2] + .3 && t < tF ? Math.abs(Math.sin(t * 8)) * 26 : 0;
+  const hit1 = hits.reduce((v, h) => v + (t >= h - .3 && t < h ? P(t, h - .3, .3) * 42 : 0), 0);
+  const heroScale = t < tC ? 1 : keys(t, [[tC, 1], [tC + .5, 1.3], [tE, 1.3], [tE + .5, 1.05], [tF, 1.05], [tF + .5, 1.6]]);
+  $('hero').style.transform = `translate(${hx - 125 + hit1}px, ${groundY - 240 - hop - cheer}px) scale(${heroScale}) rotate(${Math.sin(t * 7) * (t < 2.6 ? 3 : 1.2)}deg)`;
+  $('hero').style.transformOrigin = '50% 100%';
+
+  // 問號
+  const q = outBack(P(t, 2.15, .3)) * (1 - P(t, tBossLand - .1, .2));
+  show($('q'), q > 0 ? 1 : 0, `translate(${CX1 + 195}px, ${CY1 - 340}px) scale(${q})`);
+
+  // 魔王
+  const dropA = P(t, tBossLand - .32, .32), dropY = -560 + (560) * inQuad(dropA);
+  const land = t >= tBossLand ? (1 - P(t, tBossLand, .34)) : 0;
+  const bossBase = t < tC ? { x: 1500, y: CY1 } : null;
+  const bx = t < tC ? bossBase.x : keys(t, [[tC, 1500], [tC + .5, 1620], [tE, 1620], [tE + .5, 1530], [tF, 1530], [tF + .5, 1800]]);
+  const by = t < tC ? bossBase.y + dropY : keys(t, [[tC, CY1], [tC + .5, 860], [tE, 860], [tF, 860], [tF + .5, 870]]);
+  const bs = t < tC ? .72 : keys(t, [[tC, .72], [tC + .5, .78], [tE, .78], [tE + .5, 1.15], [tF, 1.15 * .7], [tF + .5, .42]]);
+  const hitAmt = hits.reduce((v, h) => v + (t >= h ? (1 - P(t, h, .32)) : 0), 0);
+  const fade = 1 - P(t, tF + .1, .5) * .6 - P(t, tG + 1.6, .4) * .4;
+  const hitsDone = hits.filter(h => t >= h).length;
+  const sq = (1 + land * .28 - hitAmt * .12 + Math.sin(t * 3) * .012), sqY = (1 - land * .24 + hitAmt * .08 - Math.sin(t * 3) * .012);
+  const shrink = 1 - hitsDone * .1;
+  const showBoss = t >= tBossLand - .32;
+  show($('boss'), showBoss ? fade : 0, `translate(${bx - 200 + hitAmt * 46}px, ${by - 400}px) scale(${bs * shrink * sq}, ${bs * shrink * sqY}) rotate(${hitAmt * 8}deg)`);
+  $('eyesOk').style.display = hitAmt > .08 ? 'none' : '';
+  $('eyesHit').style.display = hitAmt > .08 ? '' : 'none';
+
+  // 血條
+  const hp = keys(t, [[hits[0], 100], [hits[0] + .3, 72], [hits[1], 72], [hits[1] + .3, 44], [hits[2], 44], [hits[2] + .3, 16]], outCubic);
+  const hpO = P(t, tE + .2, .3) * (1 - P(t, tF - .15, .3));
+  show($('hpWrap'), hpO, `translate(1120px, ${80 + (1 - outBack(P(t, tE + .2, .3))) * -30}px)`);
+  $('hpFill').style.width = hp + '%';
+
+  // 文字：A
+  const aIn = outBack(P(t, .75, .4));
+  show($('hA'), P(t, .75, .15) * (1 - P(t, tB + .75, .25)), `scale(${aIn})`);
+
+  // B：標題蓋章
+  const stamp = P(t, tBossLand + .3, .22);
+  show($('title'), stamp * (1 - P(t, tC - .1, .3)), `scale(${2.3 - 1.3 * outCubic(stamp)})`);
+
+  // C
+  const g = outBack(P(t, tC + .25, .35));
+  show($('good'), P(t, tC + .25, .1) * (1 - P(t, tD - .2, .25)), `translateX(${(1 - g) * 900}px) scale(${.9 + .1 * g})`);
+  const bIn = outBack(P(t, tC + 1.5, .35));
+  const strike = outCubic(P(t, tC + 1.95, .28));
+  const shakeBad = strike > 0 && strike < 1 ? Math.sin(t * 90) * 10 : 0;
+  show($('bad'), P(t, tC + 1.5, .1) * (1 - P(t, tD - .2, .25)), `translate(${(1 - bIn) * 900 + shakeBad}px, ${strike * 8}px) rotate(${strike * -2.5}deg)`);
+  $('badLine').style.transform = `scaleX(${strike})`;
+
+  // D：餐盤縮小後打叉
+  const dO = P(t, tD, .2) * (1 - P(t, tE - .15, .2));
+  const dIn = outBack(P(t, tD, .35));
+  show($('eat'), dO, `translateY(${(1 - dIn) * -80}px)`);
+  show($('plate'), dO, `scale(${.4 + .6 * dIn})`);
+  $('food').style.transformOrigin = '250px 250px';
+  $('food').style.transform = `scale(${1 - .62 * inOut(P(t, tD + .4, .5))})`;
+  const cr = outBack(P(t, tD + 1.0, .28));
+  show($('cross'), dO * P(t, tD + 1.0, .1), `scale(${1.5 - .5 * cr})`);
+
+  // E：三招
+  const headIn = outBack(P(t, tE, .35));
+  show($('heading'), P(t, tE, .1) * (1 - P(t, tF - .2, .25)), `translateX(${(1 - headIn) * -500}px)`);
+  [['c1', S(5) - .08], ['c2', S(6) - .08], ['c3', S(7) - .08]].forEach(([id, t0], i) => {
+    const a = outBack(P(t, t0, .3));
+    const pulse = t >= hits[i] ? (1 - P(t, hits[i], .25)) * .05 : 0;
+    show($(id), P(t, t0, .08) * (1 - P(t, tF - .2, .25)), `translateX(${(1 - a) * -1000}px) scale(${1 + pulse})`);
+  });
+  const colors = ['#2fd27f', '#5aa2ff', '#ff9a3c'];
+  hits.forEach((h, i) => {
+    star(t, h - .34, 880, [295, 520, 745][i], 1530, 660, colors[i]);
+    burst(t, h, 1530, 660, [colors[i], '#ffcf4d', '#fff'], 34, 680, .85);
+    ring(t, h, 1530, 660, colors[i], 330, .42);
+  });
+
+  // 魔王落地特效
+  burst(t, tBossLand, 1540, CY1, ['#ffcf4d', '#b47ae8', '#fff', '#ff5f9e'], 60, 860, 1.05);
+  ring(t, tBossLand, 1540, CY1, '#fff', 720, .6);
+
+  // F：回診提醒
+  const n1 = outBack(P(t, tF + .15, .38));
+  show($('n1'), P(t, tF + .15, .1), `translateX(${(1 - n1) * -1200}px)`);
+  const n2 = outBack(P(t, tG + .05, .38));
+  show($('n2'), P(t, tG + .05, .1), `translateX(${(1 - n2) * -1200}px)`);
+  const bg = outBack(P(t, tG + 2.2, .45));
+  show($('badge'), P(t, tG + 2.2, .1), `translate(1680px, 90px) translate(-150px, 0) scale(${bg}) rotate(${Math.sin(t * 2) * 3}deg)`);
+  burst(t, tG + 2.3, 1680, 240, ['#ffcf4d', '#fff', '#2fd27f'], 44, 560, 1.15);
+
+  // 字幕
+  const cur = SEG.find((s, i) => t >= s.start - .05 && t < (SEG[i + 1]?.start ?? TOTAL) - .02);
+  const sub = cur ? cur.text.replace(/[，。：]$/, '') : '';
+  const subEl = $('subT');
+  if (subEl.textContent !== sub) subEl.textContent = sub;
+  subEl.style.display = sub && t < SEG[SEG.length - 1].end + .25 ? '' : 'none';
+}
+window.render = render;
+render(0);
+</script>
+</body>
+</html>

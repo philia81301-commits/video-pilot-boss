@@ -1,0 +1,11 @@
+# 影片與音檔可重新產生
+out/
+audio/
+report/out/
+report/audio/
+*.mp4
+*.mp3
+*.wav
+
+# 人物貼圖不公開，製作時從本機資料夾複製
+report/assets/
